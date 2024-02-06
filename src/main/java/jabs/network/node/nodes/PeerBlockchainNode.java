@@ -25,6 +25,8 @@ public abstract class PeerBlockchainNode<B extends SingleParentBlock<B>, T exten
     public PeerBlockchainNode(Simulator simulator, Network network, int nodeID, long downloadBandwidth,
                               long uploadBandwidth, AbstractP2PConnections routingTable,
                               AbstractChainBasedConsensus<B, T> consensusAlgorithm) {
+        //so this is the costructor of a peer blockchain node
+        //And we take: network, simulator, nodeid, download and upload bandwidth, routingtable? and the consensus Algorithm
         super(simulator, network, nodeID, downloadBandwidth, uploadBandwidth, routingTable, consensusAlgorithm);
         this.consensusAlgorithm = consensusAlgorithm;
         this.localBlockTree = consensusAlgorithm.getLocalBlockTree();

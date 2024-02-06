@@ -2,6 +2,7 @@ package jabs.ledgerdata;
 
 import jabs.ledgerdata.bitcoin.BitcoinTx;
 import jabs.ledgerdata.ethereum.EthereumTx;
+import jabs.ledgerdata.sycomore.SycomoreTx;
 import jabs.simulator.randengine.RandomnessEngine;
 
 public final class TransactionFactory {
@@ -51,4 +52,11 @@ public final class TransactionFactory {
                         BITCOIN_TRANSACTION_GAS_DISTRIBUTION, ETHEREUM_TRANSACTION_GAS_BINS));
     }
 
+    public static SycomoreTx sampleSycomoreTransaction(RandomnessEngine randomnessEngine) {
+        return new SycomoreTx(
+                (int) randomnessEngine.sampleDistributionWithBins(
+                        ETHEREUM_TRANSACTION_SIZE_DISTRIBUTION, ETHEREUM_TRANSACTION_SIZE_BINS),
+                (int) randomnessEngine.sampleDistributionWithBins(
+                        BITCOIN_TRANSACTION_GAS_DISTRIBUTION, ETHEREUM_TRANSACTION_GAS_BINS));
+    }
 }

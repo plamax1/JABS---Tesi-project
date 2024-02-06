@@ -12,6 +12,8 @@ import jabs.network.node.nodes.PeerBlockchainNode;
  */
 public abstract class AbstractChainBasedConsensus<B extends SingleParentBlock<B>, T extends Tx<T>>
         extends AbstractDAGBasedConsensus<B, T> {
+    //this is the abstractChainBased consensus
+    //and this extends the abstractDAGBasedConsensus
     /**
      * Local Block Tree in Nodes Memory
      */

@@ -51,9 +51,15 @@ public class Main {
         scenario.AddNewLogger(new PBFTCSVLogger(Paths.get("output/pbft-simulation-log.csv")));
         scenario.run();
 */
-        // Simulate Snow LAN network of 40 nodes for 1 hour
+       /* // Simulate Snow LAN network of 40 nodes for 1 hour
         scenario = new SnowLANScenario("One hour of a Snow lan Network", 1, 40,
                 3600);
+        scenario.AddNewLogger(new SnowCSVLogger(Paths.get("output/snow-simulation-log.csv")));
+        scenario.run();
+*/
+        // Simulate Snow LAN network of 40 nodes for 1 hour
+        scenario = new SycomoreScenario("One hour in the life of Sycomore", 1,
+                3600, 13.3);
         scenario.AddNewLogger(new SnowCSVLogger(Paths.get("output/snow-simulation-log.csv")));
         scenario.run();
     }

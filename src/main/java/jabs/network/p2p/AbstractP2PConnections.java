@@ -8,6 +8,7 @@ import java.util.List;
 
 // TODO recheck if it is a better method for implementing Abstract Routing Table
 public abstract class AbstractP2PConnections {
+    //This is the routing table, to be understand better in the future
     protected Node node;
     protected final List<Node> peerNeighbors = new ArrayList<>();
 
