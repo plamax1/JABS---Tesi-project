@@ -17,7 +17,7 @@ public abstract class AbstractChainBasedConsensus<B extends SingleParentBlock<B>
     /**
      * Local Block Tree in Nodes Memory
      */
-    protected final LocalBlockTree<B> localBlockTree;
+    protected final LocalBlockTree<B> localBlockTree; //tree, single parent-child
 
     /**
      * The node that runs the consensus algorithm

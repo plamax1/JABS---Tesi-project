@@ -2,6 +2,7 @@ package jabs.network.node.nodes.sycomore;
 
 import jabs.consensus.algorithm.AbstractChainBasedConsensus;
 import jabs.consensus.config.GhostProtocolConfig;
+import jabs.consensus.config.SycomoreProtocolConfig;
 import jabs.ledgerdata.ethereum.EthereumBlock;
 import jabs.ledgerdata.ethereum.EthereumBlockWithTx;
 import jabs.ledgerdata.ethereum.EthereumTx;
@@ -33,9 +34,9 @@ public class SycomoreMinerNode extends SycomoreNode implements MinerNode {
     //anche qui abbiamo 2 costruttori
     public SycomoreMinerNode(Simulator simulator, Network network, int nodeID,
                              long downloadBandwidth, long uploadBandwidth, double hashPower, SycomoreBlock genesisBlock,
-                             GhostProtocolConfig ghostProtocolConfig) {
+                             SycomoreProtocolConfig sycomoreProtocolConfig) {
         //nel primo prendiamo il genesisblock e la config del protocol
-        super(simulator, network, nodeID, downloadBandwidth, uploadBandwidth, genesisBlock, ghostProtocolConfig);
+        super(simulator, network, nodeID, downloadBandwidth, uploadBandwidth, genesisBlock, sycomoreProtocolConfig);
         this.hashPower = hashPower;
     }
 

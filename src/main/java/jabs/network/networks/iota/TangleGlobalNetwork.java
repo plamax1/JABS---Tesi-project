@@ -35,7 +35,8 @@ public class TangleGlobalNetwork<R extends Enum<R>> extends GlobalNetwork<IOTANo
     public void populateNetwork(Simulator simulator, ConsensusAlgorithmConfig consensusAlgorithmConfig) {
         this.populateNetwork(simulator, nodeDistribution.totalNumberOfNodes(), consensusAlgorithmConfig);
     }
-
+    //In the following function we populate the network inserting the
+    //simulator, the numNodes, and the ConsensusAlgorithm
     @Override
     public void populateNetwork(Simulator simulator, int numNodes, ConsensusAlgorithmConfig consensusAlgorithmConfig) {
         for (int i = 0; i < numNodes; i++) {

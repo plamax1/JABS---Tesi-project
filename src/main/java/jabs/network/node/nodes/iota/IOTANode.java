@@ -35,6 +35,7 @@ public class IOTANode extends PeerDLTNode<TangleBlock, TangleTx> implements Mine
                     AbstractP2PConnections routingTable, TangleIOTAConsensusConfig tangleIOTAConsensusConfig) {
         super(simulator, network, nodeID, downloadBandwidth, uploadBandwidth, routingTable,
                 new TangleIOTA(new LocalBlockDAG<>(TANGLE_GENESIS_BLOCK), tangleIOTAConsensusConfig));
+        //this new TangleIOTA is the consensus algorithm that is created live
     }
 
     /**

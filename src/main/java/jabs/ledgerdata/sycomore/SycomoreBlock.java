@@ -14,15 +14,15 @@ import java.util.Set;
 
 import static jabs.ledgerdata.BlockFactory.ETHEREUM_BLOCK_HASH_SIZE;
 
-public class SycomoreBlock extends Block<SycomoreBlock> implements ProofOfWorkBlock {
+public class SycomoreBlock extends SingleParentPoWBlock<SycomoreBlock> implements ProofOfWorkBlock {
     //This is the class of the SycomoreBlock
     private final Set<SycomoreBlock> uncles;
     private final double difficulty;
     private final double weight;
 
-    public SycomoreBlock(int size, int height, double creationTime, SycomoreMinerNode creator, List<SycomoreBlock> parents,
+    public SycomoreBlock(int size, int height, double creationTime, SycomoreMinerNode creator, SycomoreBlock parent,
                          Set<SycomoreBlock> uncles, double difficulty, double weight) {
-        super(size, height, creationTime, creator, parents, ETHEREUM_BLOCK_HASH_SIZE);
+        super(size, height, creationTime, creator, parent, ETHEREUM_BLOCK_HASH_SIZE, difficulty, weight);
         this.uncles = uncles;
         this.weight = weight;
         this.difficulty = difficulty;

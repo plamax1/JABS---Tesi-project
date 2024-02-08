@@ -2,6 +2,7 @@ package jabs.network.networks.sycomore;
 
 import jabs.consensus.config.ChainBasedConsensusConfig;
 import jabs.consensus.config.GhostProtocolConfig;
+import jabs.consensus.config.SycomoreProtocolConfig;
 import jabs.ledgerdata.ethereum.EthereumBlock;
 import jabs.ledgerdata.sycomore.SycomoreBlock;
 import jabs.network.networks.GlobalProofOfWorkNetwork;
@@ -46,7 +47,7 @@ public class SycomoreProofOfWorkNetwork<R extends Enum<R>> extends //Sycomore PO
         R region = this.sampleRegion();
         return new SycomoreNode(simulator, this, nodeID, this.sampleDownloadBandwidth(region),
                 this.sampleUploadBandwidth(region),
-                genesisBlock, (GhostProtocolConfig) chainBasedConsensusConfig);
+                genesisBlock, (SycomoreProtocolConfig) chainBasedConsensusConfig);
     }
 
     @Override
@@ -56,7 +57,7 @@ public class SycomoreProofOfWorkNetwork<R extends Enum<R>> extends //Sycomore PO
         R region = this.sampleMinerRegion();
         return new SycomoreMinerNode(simulator, this, nodeID, this.sampleDownloadBandwidth(region),
                 this.sampleUploadBandwidth(region), hashPower,
-                genesisBlock, (GhostProtocolConfig) chainBasedConsensusConfig);
+                genesisBlock, (SycomoreProtocolConfig) chainBasedConsensusConfig);
     }
 
 }

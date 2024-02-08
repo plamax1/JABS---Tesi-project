@@ -2,9 +2,11 @@ package jabs.network.node.nodes.sycomore;
 
 import jabs.consensus.algorithm.AbstractChainBasedConsensus;
 import jabs.consensus.algorithm.GhostProtocol;
+import jabs.consensus.algorithm.SycomoreConsensusAlgorithm;
 import jabs.consensus.algorithm.VotingBasedConsensus;
 import jabs.consensus.blockchain.LocalBlockTree;
 import jabs.consensus.config.GhostProtocolConfig;
+import jabs.consensus.config.SycomoreProtocolConfig;
 import jabs.ledgerdata.TransactionFactory;
 import jabs.ledgerdata.Vote;
 import jabs.ledgerdata.ethereum.EthereumBlock;
@@ -26,11 +28,12 @@ import static org.apache.commons.math3.util.FastMath.sqrt;
 public class SycomoreNode extends PeerBlockchainNode<SycomoreBlock, SycomoreTx> {
     //qui abbiamo 2 costruttori
     public SycomoreNode(Simulator simulator, Network network, int nodeID, long downloadBandwidth, long uploadBandwidth,
-                        SycomoreBlock genesisBlock, GhostProtocolConfig ghostProtocolConfig) { //the constructor,
+                        SycomoreBlock genesisBlock, SycomoreProtocolConfig sycomoreProtocolConfig) { //the constructor,
         //takes as parameters, simulator, network, nodeid, download and upload bandwidth, and protocol config
         super(simulator, network, nodeID, downloadBandwidth, uploadBandwidth,
                 new EthereumGethP2P(), //this is abstractp2pconnection -> used with ethereumgetp2p
-                new GhostProtocol<>(new LocalBlockTree<>(genesisBlock), ghostProtocolConfig));
+                //new GhostProtocol<>(new LocalBlockTree<>(genesisBlock), ghostProtocolConfig));
+                new SycomoreConsensusAlgorithm<>(new LocalBlockTree<>(genesisBlock), sycomoreProtocolConfig));
     }
 
     public SycomoreNode(Simulator simulator, Network network, int nodeID, long downloadBandwidth, long uploadBandwidth,

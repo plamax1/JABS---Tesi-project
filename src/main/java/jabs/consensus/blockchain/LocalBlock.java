@@ -14,6 +14,8 @@ import java.util.HashSet;
  *           LocalBlock
  */
 public class LocalBlock<B extends Block<B>> {
+    //So LocalBlock is how the block is treated in the nodes memory...
+    //we add the children to the block, and there is the function to turn the block in a localblock
     /**
      * The block that is received by node
      */

@@ -12,6 +12,7 @@ import java.util.*;
  * @param <B> The block type that this tree supports
  */
 public class LocalBlockTree<B extends SingleParentBlock<B>> extends LocalBlockDAG<B> {
+    //in this case we extend SingleParentBlock
     /**
      * Creates the local tree block of a node.
      *

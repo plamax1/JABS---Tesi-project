@@ -62,5 +62,7 @@ public class Main {
                 3600, 13.3);
         scenario.AddNewLogger(new SnowCSVLogger(Paths.get("output/snow-simulation-log.csv")));
         scenario.run();
+        // IOTA
+
     }
 }

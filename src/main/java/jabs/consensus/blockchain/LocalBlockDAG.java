@@ -29,6 +29,7 @@ public class LocalBlockDAG<B extends Block<B>> {
      *
      * @param genesisLocalBlock The block with no parents in the network
      */
+    //This is the constructor, takes as input the genesisBlock
     public LocalBlockDAG(B genesisLocalBlock) {
         LocalBlock<B> localGenesisBlock = new LocalBlock<>(genesisLocalBlock);
         localGenesisBlock.isConnectedToGenesis = true;
@@ -42,6 +43,7 @@ public class LocalBlockDAG<B extends Block<B>> {
      * @param block received block from the network or generated inside
      *              the node itself.
      */
+    //Adds a block from the network to the local DAG Block
     public void add(B block) {
         if (!this.localBlockDAG.containsKey(block)) {
             LocalBlock<B> localBlock = new LocalBlock<>(block);
