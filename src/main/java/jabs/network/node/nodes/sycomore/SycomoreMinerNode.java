@@ -1,6 +1,7 @@
 package jabs.network.node.nodes.sycomore;
 
 import jabs.consensus.algorithm.AbstractChainBasedConsensus;
+import jabs.consensus.algorithm.AbstractDAGBasedConsensus;
 import jabs.consensus.config.GhostProtocolConfig;
 import jabs.consensus.config.SycomoreProtocolConfig;
 import jabs.ledgerdata.ethereum.EthereumBlock;
@@ -42,19 +43,19 @@ public class SycomoreMinerNode extends SycomoreNode implements MinerNode {
 
     public SycomoreMinerNode(Simulator simulator, Network network, int nodeID, long downloadBandwidth,
                              long uploadBandwidth, double hashPower,
-                             AbstractChainBasedConsensus<SycomoreBlock, SycomoreTx> consensusAlgorithm) {
+                             AbstractDAGBasedConsensus<SycomoreBlock, SycomoreTx> consensusAlgorithm) {
         //nel secondo prendiamo abstractchainbasedconsensus
         super(simulator, network, nodeID, downloadBandwidth, uploadBandwidth, consensusAlgorithm);
         this.hashPower = hashPower;
     }
 
     public void generateNewBlock() {
-        SycomoreBlock canonicalChainHead = this.consensusAlgorithm.getCanonicalChainHead();
+        //SycomoreBlock canonicalChainHead = this.consensusAlgorithm.getCanonicalChainHead();
 
         Set<SycomoreBlock> tipBlocks = this.localBlockTree.getChildlessBlocks();
         //tip block should be unconfirmed block or blocks without child --- so leaf
         //here we remove the head, and the alreadyuncledblocks
-        tipBlocks.remove(canonicalChainHead);
+       // tipBlocks.remove(canonicalChainHead);
         tipBlocks.removeAll(alreadyUncledBlocks); //da rivedere
 
         Set<SycomoreTx> blockTxs = new HashSet<>();
@@ -68,27 +69,27 @@ public class SycomoreMinerNode extends SycomoreNode implements MinerNode {
         } //here we add the transactions to the block
 
         double weight = this.network.getRandom().sampleExponentialDistribution(1);
-        SycomoreBlockWithTx ethereumBlockWithTx = new SycomoreBlockWithTx(
-                canonicalChainHead.getHeight()+1, simulator.getSimulationTime(), this,
-                this.getConsensusAlgorithm().getCanonicalChainHead(), tipBlocks, blockTxs, ETHEREUM_MIN_DIFFICULTY,
-                weight); // TODO: Difficulty?
+        //SycomoreBlockWithTx ethereumBlockWithTx = new SycomoreBlockWithTx(
+              //  canonicalChainHead.getHeight()+1, simulator.getSimulationTime(), this,
+                //this.getConsensusAlgorithm().getCanonicalChainHead(), tipBlocks, blockTxs, ETHEREUM_MIN_DIFFICULTY,
+                //weight); // TODO: Difficulty?
 
-        this.processIncomingPacket(
+       /* this.processIncomingPacket(
                 new Packet(
                         this, this, new DataMessage(ethereumBlockWithTx)
                 )
-        );
+        );*/
     }
 
     /**
      *
      */
     @Override
-    public void startMining() {
+    public void startMining() {/*
         BlockMiningProcess blockMiningProcess = new BlockMiningProcess(this.simulator, this.network.getRandom(),
                 this.consensusAlgorithm.getCanonicalChainHead().getDifficulty()/((double) this.hashPower), this);
         this.miningProcess = this.simulator.putEvent(blockMiningProcess, blockMiningProcess.timeToNextGeneration());
-    }
+    */}
 
     /**
      *

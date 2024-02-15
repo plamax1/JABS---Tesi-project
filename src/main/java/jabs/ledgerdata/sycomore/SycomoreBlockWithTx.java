@@ -7,6 +7,7 @@ import jabs.network.node.nodes.ethereum.EthereumMinerNode;
 import jabs.network.node.nodes.sycomore.SycomoreMinerNode;
 
 import java.util.HashSet;
+import java.util.List;
 import java.util.Set;
 
 import static jabs.ledgerdata.BlockFactory.ETHEREUM_BLOCK_HASH_SIZE;
@@ -17,9 +18,9 @@ public class SycomoreBlockWithTx extends SycomoreBlock implements BlockWithTx<Sy
     private final Set<SycomoreTx> Txs;
     private final long totalGas;
 
-    public SycomoreBlockWithTx(int height, double creationTime, SycomoreMinerNode creator, SycomoreBlock parent,
+    public SycomoreBlockWithTx(int height, double creationTime, SycomoreMinerNode creator, List<SycomoreBlock> parents,
                                Set<SycomoreBlock> uncles, Set<SycomoreTx> txs, long difficulty, double weight) {
-        super(0, height, creationTime, creator, parent, uncles, difficulty, weight);
+        super(0, height, creationTime, creator, parents, uncles, difficulty, weight);
         Txs = txs;
 
         int totalSize = ETHEREUM_BLOCK_HEADER_SIZE;

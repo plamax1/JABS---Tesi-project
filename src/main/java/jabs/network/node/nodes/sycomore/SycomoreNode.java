@@ -1,9 +1,7 @@
 package jabs.network.node.nodes.sycomore;
 
-import jabs.consensus.algorithm.AbstractChainBasedConsensus;
-import jabs.consensus.algorithm.GhostProtocol;
-import jabs.consensus.algorithm.SycomoreConsensusAlgorithm;
-import jabs.consensus.algorithm.VotingBasedConsensus;
+import jabs.consensus.algorithm.*;
+import jabs.consensus.blockchain.LocalBlockDAG;
 import jabs.consensus.blockchain.LocalBlockTree;
 import jabs.consensus.config.GhostProtocolConfig;
 import jabs.consensus.config.SycomoreProtocolConfig;
@@ -20,12 +18,13 @@ import jabs.network.message.VoteMessage;
 import jabs.network.networks.Network;
 import jabs.network.node.nodes.Node;
 import jabs.network.node.nodes.PeerBlockchainNode;
+import jabs.network.node.nodes.PeerDLTNode;
 import jabs.network.p2p.EthereumGethP2P;
 import jabs.simulator.Simulator;
 
 import static org.apache.commons.math3.util.FastMath.sqrt;
 
-public class SycomoreNode extends PeerBlockchainNode<SycomoreBlock, SycomoreTx> {
+public class SycomoreNode extends PeerDLTNode<SycomoreBlock, SycomoreTx> {
     //qui abbiamo 2 costruttori
     public SycomoreNode(Simulator simulator, Network network, int nodeID, long downloadBandwidth, long uploadBandwidth,
                         SycomoreBlock genesisBlock, SycomoreProtocolConfig sycomoreProtocolConfig) { //the constructor,
@@ -33,11 +32,11 @@ public class SycomoreNode extends PeerBlockchainNode<SycomoreBlock, SycomoreTx> 
         super(simulator, network, nodeID, downloadBandwidth, uploadBandwidth,
                 new EthereumGethP2P(), //this is abstractp2pconnection -> used with ethereumgetp2p
                 //new GhostProtocol<>(new LocalBlockTree<>(genesisBlock), ghostProtocolConfig));
-                new SycomoreConsensusAlgorithm<>(new LocalBlockTree<>(genesisBlock), sycomoreProtocolConfig));
+                new SycomoreConsensusAlgorithm(new LocalBlockDAG<>(genesisBlock), sycomoreProtocolConfig));
     }
 
     public SycomoreNode(Simulator simulator, Network network, int nodeID, long downloadBandwidth, long uploadBandwidth,
-                        AbstractChainBasedConsensus<SycomoreBlock, SycomoreTx> consensusAlgorithm) {
+                        AbstractDAGBasedConsensus<SycomoreBlock, SycomoreTx> consensusAlgorithm) {
         //this is the second costructor, here we don't have the genesisblock and the ghostprocoilconfig, but the
          //abstractchainbasedconsensus
         super(simulator, network, nodeID, downloadBandwidth, uploadBandwidth,

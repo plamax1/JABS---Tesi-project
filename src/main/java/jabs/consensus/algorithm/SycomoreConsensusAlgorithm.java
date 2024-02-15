@@ -1,22 +1,25 @@
 package jabs.consensus.algorithm;
 
+import jabs.consensus.blockchain.LocalBlockDAG;
 import jabs.consensus.blockchain.LocalBlockTree;
 import jabs.consensus.config.GhostProtocolConfig;
 import jabs.consensus.config.SycomoreProtocolConfig;
 import jabs.ledgerdata.SingleParentBlock;
 import jabs.ledgerdata.Tx;
+import jabs.ledgerdata.sycomore.SycomoreBlock;
+import jabs.ledgerdata.sycomore.SycomoreTx;
 
 import java.util.HashMap;
 import java.util.HashSet;
 
-public class SycomoreConsensusAlgorithm<B extends SingleParentBlock<B>, T extends Tx<T>>
-        extends AbstractChainBasedConsensus<B, T> {
-    private final HashMap<B, Integer> totalWeights = new HashMap<>();
+public class SycomoreConsensusAlgorithm extends AbstractDAGBasedConsensus<SycomoreBlock, SycomoreTx>
+         {
+   //private final HashMap<, Integer> totalWeights = new HashMap<>();
     public static int DEFAULT_GHOST_WEIGHT = 1;
-    protected B originOfGhost;
+    protected SycomoreBlock originOfGhost;
     private final double averageBlockMiningInterval;
 
-    public SycomoreConsensusAlgorithm(LocalBlockTree<B> localBlockTree, SycomoreProtocolConfig sycomoreProtocolConfig) {
+    public SycomoreConsensusAlgorithm(LocalBlockDAG<SycomoreBlock> localBlockTree, SycomoreProtocolConfig sycomoreProtocolConfig) {
         super(localBlockTree);
         this.originOfGhost = localBlockTree.getGenesisBlock();
         this.newIncomingBlock(localBlockTree.getGenesisBlock());
@@ -24,7 +27,10 @@ public class SycomoreConsensusAlgorithm<B extends SingleParentBlock<B>, T extend
     }
 
     @Override
-    public void newIncomingBlock(B block) {
+    public void newIncomingBlock(SycomoreBlock block) {
+        //here there is what happens for every new incoming block
+        System.out.println("new block arrived"
+        ); /*
         totalWeights.put(block, DEFAULT_GHOST_WEIGHT);
         if (this.localBlockTree.getLocalBlock(block).isConnectedToGenesis) {
             for (B ancestor:this.localBlockTree.getAllAncestors(block)) {
@@ -38,9 +44,9 @@ public class SycomoreConsensusAlgorithm<B extends SingleParentBlock<B>, T extend
         if (this.currentMainChainHead != ghostMainChainHead) {
             this.currentMainChainHead = ghostMainChainHead;
             updateChain();
-        }
+        }*/
     }
-
+/*
     public B ghost() {
         B block = this.originOfGhost;
 
@@ -65,5 +71,6 @@ public class SycomoreConsensusAlgorithm<B extends SingleParentBlock<B>, T extend
     @Override
     protected void updateChain() {
         this.confirmedBlocks = this.localBlockTree.getAllAncestors(this.currentMainChainHead);
-    }
-}
+    }*/
+
+         }
