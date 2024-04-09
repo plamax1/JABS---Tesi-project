@@ -9,7 +9,9 @@ import java.util.List;
 /**
  * @author habib yajam
  */
+//ok, now let's see p2p connection
 public abstract class AbstractBlockchainP2PConnections extends AbstractP2PConnections {
+    //Abstract blockchain p2p connection
     protected final int numOutboundConnections;
     private final int maxConnections;
 
@@ -25,6 +27,7 @@ public abstract class AbstractBlockchainP2PConnections extends AbstractP2PConnec
     }
 
     public void connectToNetwork(Network network){
+        //connect a node to the network
         this.network = network;
         node.getNodeNetworkInterface().connectNetwork(network, network.getRandom());
         while (this.outbound.size() < this.numOutboundConnections) {

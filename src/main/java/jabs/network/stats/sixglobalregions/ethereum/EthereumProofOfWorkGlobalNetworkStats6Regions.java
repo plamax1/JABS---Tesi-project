@@ -6,6 +6,7 @@ import jabs.simulator.randengine.RandomnessEngine;
 
 public class EthereumProofOfWorkGlobalNetworkStats6Regions extends EthereumNodeGlobalNetworkStats6Regions
         implements ProofOfWorkGlobalNetworkStats<SixRegions> {
+    //Eth pow global network, implements Network stats 6 regions
 
     public EthereumProofOfWorkGlobalNetworkStats6Regions(RandomnessEngine randomnessEngine) {
         super(randomnessEngine);
@@ -31,7 +32,7 @@ public class EthereumProofOfWorkGlobalNetworkStats6Regions extends EthereumNodeG
             15, 14, 14, 11, 11, 10, 9, 8, 6, 6, 4, 4, 4, 3, 3, 3, 2, 2, 2, 2, 1
     };
 
-    public static final int ETHEREUM_NUM_MINERS_2022 = 37;
+    public static final int ETHEREUM_NUM_MINERS_2022 = 35;
 
 
     @Override

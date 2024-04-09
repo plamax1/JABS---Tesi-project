@@ -1,6 +1,7 @@
 package jabs.network.networks.bitcoin;
 
 import jabs.consensus.config.ChainBasedConsensusConfig;
+import jabs.consensus.config.GenericConsensusAlgorithmConfig;
 import jabs.ledgerdata.bitcoin.BitcoinBlockWithoutTx;
 import jabs.network.node.nodes.bitcoin.BitcoinMinerNode;
 import jabs.network.node.nodes.bitcoin.BitcoinMinerNodeWithoutTx;
@@ -17,9 +18,9 @@ public class BitcoinGlobalProofOfWorkNetworkWithoutTx<R extends Enum<R>> extends
     @Override
     public BitcoinMinerNode createSampleMiner(Simulator simulator, int nodeID, double hashPower,
                                               BitcoinBlockWithoutTx genesisBlock,
-                                              ChainBasedConsensusConfig chainBasedConsensusConfig) {
+                                              GenericConsensusAlgorithmConfig chainBasedConsensusConfig) {
         R region = this.sampleRegion();
         return new BitcoinMinerNodeWithoutTx(simulator, this, nodeID, this.sampleDownloadBandwidth(region),
-                this.sampleUploadBandwidth(region), hashPower, genesisBlock, chainBasedConsensusConfig);
+                this.sampleUploadBandwidth(region), hashPower, genesisBlock, (ChainBasedConsensusConfig) chainBasedConsensusConfig);
     }
 }

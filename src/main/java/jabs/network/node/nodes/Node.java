@@ -7,17 +7,17 @@ import jabs.network.node.NetworkInterface;
 import jabs.network.p2p.AbstractP2PConnections;
 import jabs.simulator.Simulator;
 
-public abstract class Node {
+public abstract class Node { //This is the generic class node
     /**
      * Node's ID (integer number which identifies node in its network)
      */
-    public final int nodeID;
+    public final int nodeID; //the class has a nodeID
 
     /**
      * Node's network interface
      * This object handles all packet sending/receiving in network
      */
-    protected final NetworkInterface networkInterface;
+    protected final NetworkInterface networkInterface; //ok the network interface, esaminiamola
 
     /**
      * Node's P2P connections

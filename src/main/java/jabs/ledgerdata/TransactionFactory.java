@@ -6,6 +6,7 @@ import jabs.ledgerdata.sycomore.SycomoreTx;
 import jabs.simulator.randengine.RandomnessEngine;
 
 public final class TransactionFactory {
+    //What is the transaction factory??
 
     private static final double[] BITCOIN_TRANSACTION_SIZE_DISTRIBUTION = {
             0.0000, 0.0000, 0.0000, 0.0000, 0.0000, 0.0587, 0.4874, 0.2303, 0.1339, 0.0518, 0.0197, 0.0089, 0.0040,

@@ -9,8 +9,10 @@ import jabs.simulator.Simulator;
 import java.util.PriorityQueue;
 
 public abstract class AbstractPacketProcessor implements Event {
-    protected final Simulator simulator;
-    protected final Network network;
+    //this class is also in the network interface... the AbstractPacketProcessor in a process that
+    //is abstract to process in out packets
+    protected final Simulator simulator; //Which is the simulator...queue...ecc
+    protected final Network network;//...network... list of nodes ecc.
     protected final RandomnessEngine randomnessEngine;
     protected final PriorityQueue<TimedPacket> packetsQueue = new PriorityQueue<>();
 
@@ -18,6 +20,7 @@ public abstract class AbstractPacketProcessor implements Event {
         public int compareTo(TimedPacket o) {
                 return Double.compare(this.time, o.time);
             }
+            //what is a timedpacket? a packet with a time
     }
 
     protected final Node node;
@@ -44,12 +47,17 @@ public abstract class AbstractPacketProcessor implements Event {
     }
 
     public void execute() {
+        //what do we do in execute? The next step in the packet processor is executed
         TimedPacket timedPacket = this.packetsQueue.poll();
-        if (timedPacket != null) {
+        //the packet is pooled from the list
+        if (timedPacket != null) { //if there is something in the list
             if (!this.packetsQueue.isEmpty()) {
                 simulator.putEvent(this, processingTime(timedPacket.packet));
+                //we put the event in the simulator
+
             }
             this.sendPacketToNextProcess(timedPacket.packet);
+            //ok what means send packet to next processor?
         }
     }
 

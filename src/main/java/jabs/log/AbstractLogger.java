@@ -5,7 +5,7 @@ import jabs.simulator.event.Event;
 
 import java.io.IOException;
 
-public abstract class AbstractLogger {
+public abstract class AbstractLogger { //funzione dei logger
     /**
      * The main scenario in which the logger is working
      */

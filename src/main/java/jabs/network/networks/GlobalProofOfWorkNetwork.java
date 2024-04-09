@@ -2,6 +2,7 @@ package jabs.network.networks;
 
 import jabs.consensus.config.ChainBasedConsensusConfig;
 import jabs.consensus.config.ConsensusAlgorithmConfig;
+import jabs.consensus.config.GenericConsensusAlgorithmConfig;
 import jabs.ledgerdata.Block;
 import jabs.ledgerdata.ProofOfWorkBlock;
 import jabs.network.stats.MinerGlobalRegionDistribution;
@@ -13,21 +14,24 @@ import jabs.simulator.randengine.RandomnessEngine;
 
 import java.util.ArrayList;
 import java.util.List;
-
+//what is GlobalProofofWorkNetwork
 public abstract class GlobalProofOfWorkNetwork<N extends Node, M extends MinerNode, B extends Block<B>, R extends Enum<R>>
         extends GlobalNetwork<N, R> {
+    //What is GlobalProofofWorkNetwork? Extends Node, MinerNode, and Block
     protected final List<MinerNode> miners = new ArrayList<>();
     protected final MinerGlobalRegionDistribution<R> minerDistribution;
+    //So the minerdistribution is essentially the networkstats.
 
     protected GlobalProofOfWorkNetwork(RandomnessEngine randomnessEngine, ProofOfWorkGlobalNetworkStats<R> networkStats) {
         super(randomnessEngine, networkStats);
         this.minerDistribution = networkStats;
     }
 
-    public void startAllMiningProcesses() {
+    public void startAllMiningProcesses() { //used in the scenario
         List<MinerNode> allMiners = this.getAllMiners();
         for (MinerNode miner: allMiners) {
-            miner.startMining();
+            miner.startMining(); //Quindi nel global Proof of work network c'è la funzione per fare
+            //lo start del mining..., e questa funzione chiama il miner startmining che chiama a sua volta i processes
         }
     }
 
@@ -41,7 +45,7 @@ public abstract class GlobalProofOfWorkNetwork<N extends Node, M extends MinerNo
         return miners.get(i);
     }
 
-    public void addMiner(M node) {
+    public void addMiner(M node) { //funzione to add a miner
         nodes.add((N) node);
         miners.add(node);
         nodeTypes.put((N) node, sampleMinerRegion());
@@ -53,9 +57,11 @@ public abstract class GlobalProofOfWorkNetwork<N extends Node, M extends MinerNo
 
     public abstract B genesisBlock(double difficulty);
     public abstract N createSampleNode(Simulator simulator, int nodeID, B genesisBlock,
-                                       ChainBasedConsensusConfig chainBasedConsensusConfig);
+                                       GenericConsensusAlgorithmConfig chainBasedConsensusConfig);
     public abstract M createSampleMiner(Simulator simulator, int nodeID, double hashPower, B genesisBlock,
-                                        ChainBasedConsensusConfig chainBasedConsensusConfig);
+                                        GenericConsensusAlgorithmConfig chainBasedConsensusConfig);
+
+    //Funzioni populateNetwork...
 
 
     public void populateNetwork(Simulator simulator, ConsensusAlgorithmConfig consensusAlgorithmConfig) {
@@ -70,21 +76,30 @@ public abstract class GlobalProofOfWorkNetwork<N extends Node, M extends MinerNo
 
     public void populateNetwork(Simulator simulator, int numMiners, int numNonMiners,
                                 ConsensusAlgorithmConfig consensusAlgorithmConfig) {
+        //qui mettiamo a disposizione la funzione populateNetwork vera e propria, che
+        //prende i miner, non miner, l'algoritmo di consenso e il sumulatore
         long totalHashPower = 0;
         List<Double> hashPowers = new ArrayList<>();
         for (int i = 0; i < numMiners; i++) {
             double hashPower = sampleHashPower();
             hashPowers.add(hashPower);
             totalHashPower += hashPower;
-        }
+        } //calcoliamo l'hashpower totale
 
-        ChainBasedConsensusConfig chainBasedConsensusConfig = (ChainBasedConsensusConfig) consensusAlgorithmConfig;
+        //Perchè fa il cast????
+
+        //ChainBasedConsensusConfig chainBasedConsensusConfig = (ChainBasedConsensusConfig) consensusAlgorithmConfig;
+        GenericConsensusAlgorithmConfig chainBasedConsensusConfig = (GenericConsensusAlgorithmConfig) consensusAlgorithmConfig;
+
         double miningInterval = chainBasedConsensusConfig.averageBlockMiningInterval();
+        //qui stabiliamo l'average block interval
         B genesisBlock = (B) chainBasedConsensusConfig.getGenesisBlock();
         double genesisDifficulty = ((ProofOfWorkBlock) genesisBlock).getDifficulty();
+        //get the difficulty from the genesis block
 
         double hashPowerScale = genesisDifficulty / (totalHashPower * miningInterval);
-
+        //For each miner we create a sample miner, for each node a sample node, and then
+        //connect everything to the network.
         for (int i = 0; i < numMiners; i++) {
             this.addMiner(createSampleMiner(simulator, i, hashPowerScale * hashPowers.get(i), genesisBlock,
                     chainBasedConsensusConfig));

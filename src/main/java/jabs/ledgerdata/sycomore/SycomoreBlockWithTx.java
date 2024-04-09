@@ -4,9 +4,11 @@ import jabs.ledgerdata.BlockWithTx;
 import jabs.ledgerdata.ethereum.EthereumBlock;
 import jabs.ledgerdata.ethereum.EthereumTx;
 import jabs.network.node.nodes.ethereum.EthereumMinerNode;
+import jabs.network.node.nodes.sycomore.BlockHeader;
 import jabs.network.node.nodes.sycomore.SycomoreMinerNode;
 
 import java.util.HashSet;
+import java.util.LinkedList;
 import java.util.List;
 import java.util.Set;
 
@@ -18,9 +20,9 @@ public class SycomoreBlockWithTx extends SycomoreBlock implements BlockWithTx<Sy
     private final Set<SycomoreTx> Txs;
     private final long totalGas;
 
-    public SycomoreBlockWithTx(int height, double creationTime, SycomoreMinerNode creator, List<SycomoreBlock> parents,
+    public SycomoreBlockWithTx(BlockHeader header,int chainHeight, String label, int height, double creationTime, SycomoreMinerNode creator, LinkedList<SycomoreBlock> parents,
                                Set<SycomoreBlock> uncles, Set<SycomoreTx> txs, long difficulty, double weight) {
-        super(0, height, creationTime, creator, parents, uncles, difficulty, weight);
+        super(header,0,label,0, height, creationTime, creator, parents, uncles, difficulty, weight);
         Txs = txs;
 
         int totalSize = ETHEREUM_BLOCK_HEADER_SIZE;
@@ -28,7 +30,8 @@ public class SycomoreBlockWithTx extends SycomoreBlock implements BlockWithTx<Sy
             totalSize += tx.getSize();
         }
 
-        this.size = totalSize + (uncles.size() * ETHEREUM_BLOCK_HASH_SIZE);
+        //this.size = totalSize + (uncles.size() * ETHEREUM_BLOCK_HASH_SIZE);
+        //We update the size after the call of super
 
         long totalGasTemp = 0;
         for (SycomoreTx tx:txs) {
@@ -39,8 +42,8 @@ public class SycomoreBlockWithTx extends SycomoreBlock implements BlockWithTx<Sy
     }
 
     public static SycomoreBlockWithTx generateGenesisBlock(long difficulty) {
-        return new SycomoreBlockWithTx(0, 0, null, null, new HashSet<>(),
-                new HashSet<>(), difficulty, 0);
+        return new SycomoreBlockWithTx(new BlockHeader(),0, "", 0, 0, null, null,
+                new HashSet<>(), new HashSet<>(), difficulty, 0);
     }
 
     @Override

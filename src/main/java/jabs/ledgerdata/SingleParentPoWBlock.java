@@ -5,7 +5,7 @@ import jabs.network.node.nodes.Node;
 import java.util.ArrayList;
 
 public class SingleParentPoWBlock<B extends SingleParentPoWBlock<B>> extends SingleParentBlock<B> implements ProofOfWorkBlock{
-    //here we take the singleparentblock and implement the POWBlock
+    //here we take the singleParentblock and implement the POWBlock
     protected final double difficulty;
     protected final double weight;
 

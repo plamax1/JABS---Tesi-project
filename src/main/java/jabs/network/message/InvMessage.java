@@ -4,7 +4,7 @@ import jabs.ledgerdata.Hash;
 
 import static jabs.ledgerdata.BlockFactory.INV_MESSAGE_OVERHEAD;
 
-public class InvMessage extends Message {
+public class InvMessage extends Message { //inventory message
     private final Hash hash;
 
     public InvMessage(int hashSize, Hash hash) {

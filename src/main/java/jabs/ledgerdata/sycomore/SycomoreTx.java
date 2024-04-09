@@ -6,7 +6,7 @@ public class SycomoreTx extends Tx<SycomoreTx> {
     final long gas;
 
     public SycomoreTx(int size, long gas) {
-        super(size, 0); // Ethereum does not use transaction hashes in network communication
+        super(size, 32); // Ethereum does not use transaction hashes in network communication
         //but what about sycomore
         this.gas = gas;
     }

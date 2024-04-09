@@ -6,7 +6,7 @@ import java.util.ArrayList;
 import java.util.List;
 
 public abstract class Block<B extends Block<B>> extends Data implements Comparable<Block<B>> {
-    //the block height is the numner of the block in the blockchain
+    //the block height is the number of the block in the blockchain
     private final int height;
     private final double creationTime;
     //we have a list of parents, because in a dag the parents can be more than one

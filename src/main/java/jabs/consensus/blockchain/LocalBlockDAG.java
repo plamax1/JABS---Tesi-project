@@ -36,6 +36,16 @@ public class LocalBlockDAG<B extends Block<B>> {
         this.localBlockDAG.put(genesisLocalBlock, localGenesisBlock);
         this.genesisBlock = localGenesisBlock;
     }
+    public Set<B> getAllBlocks() {
+        HashSet<B> allBlocks = new HashSet<>();
+        for (B block:this.localBlockDAG.keySet()) {
+            if(block.getParents()!=null){
+            for (B parent: block.getParents()){
+                    allBlocks.add(block);
+            }
+        }}
+        return allBlocks;
+    }
 
     /**
      * Adds a received block from network to the local DAG block.

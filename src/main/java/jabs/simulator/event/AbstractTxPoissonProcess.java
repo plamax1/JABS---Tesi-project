@@ -5,6 +5,7 @@ import jabs.simulator.randengine.RandomnessEngine;
 import jabs.simulator.Simulator;
 
 public abstract class AbstractTxPoissonProcess extends AbstractPoissonProcess {
+    //just abstract for transaction generation using poisson process.
     protected Node node;
 
     public AbstractTxPoissonProcess(Simulator simulator, RandomnessEngine randomnessEngine, double averageTimeBetweenTxs) {

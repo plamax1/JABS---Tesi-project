@@ -14,6 +14,7 @@ import jabs.network.node.nodes.snow.SnowNode;
 import java.util.Set;
 
 public final class BlockFactory {
+    //There we had transactionFactory, here we have BlockFactory
     public static final int ETHEREUM_BLOCK_HEADER_SIZE = 543; // A header could have variable size but mostly its really close this value
     public static final int ETHEREUM_BLOCK_HASH_SIZE = 36; // 32 byte hash + 4 byte network id
     public static final long ETHEREUM_MIN_DIFFICULTY = 17146335232L;

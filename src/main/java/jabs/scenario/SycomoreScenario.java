@@ -1,8 +1,11 @@
 package jabs.scenario;
 
 import jabs.consensus.config.GhostProtocolConfig;
+import jabs.consensus.config.SycomoreProtocolConfig;
 import jabs.ledgerdata.ethereum.EthereumBlock;
+import jabs.ledgerdata.sycomore.SycomoreBlock;
 import jabs.network.networks.ethereum.EthereumGlobalProofOfWorkNetwork;
+import jabs.network.networks.sycomore.SycomoreGlobalProofOfWorkNetwork;
 import jabs.network.stats.sixglobalregions.ethereum.EthereumProofOfWorkGlobalNetworkStats6Regions;
 
 import static jabs.network.stats.eightysixcountries.ethereum.EthereumProofOfWorkGlobalNetworkStats86Countries.ETHEREUM_DIFFICULTY_2022;
@@ -26,17 +29,18 @@ public class SycomoreScenario extends AbstractScenario {
 
     @Override
     public void createNetwork() {
-        EthereumGlobalProofOfWorkNetwork<?> ethereumNetwork = new EthereumGlobalProofOfWorkNetwork<>(randomnessEngine,
+        SycomoreGlobalProofOfWorkNetwork<?> sycomoreNetwork =  new SycomoreGlobalProofOfWorkNetwork<>(randomnessEngine,
                 new EthereumProofOfWorkGlobalNetworkStats6Regions(randomnessEngine));
-        this.network = ethereumNetwork;
-        ethereumNetwork.populateNetwork(simulator,
-                new GhostProtocolConfig(EthereumBlock.generateGenesisBlock(ETHEREUM_DIFFICULTY_2022),
+
+        this.network = sycomoreNetwork;
+        sycomoreNetwork.populateNetwork(simulator,
+                new SycomoreProtocolConfig<>(SycomoreBlock.generateGenesisBlock(ETHEREUM_DIFFICULTY_2022),
                         this.averageBlockInterval));
     }
 
     @Override
     protected void insertInitialEvents() {
-        ((EthereumGlobalProofOfWorkNetwork<?>) network).startAllMiningProcesses();
+        ((SycomoreGlobalProofOfWorkNetwork<?>) network).startAllMiningProcesses();
     }
 
     @Override

@@ -52,6 +52,7 @@ public abstract class AbstractScenario {
     /**
      * Create the network and set up the simulation environment.
      */
+    //Tutte funzioni abstract da implementare
     abstract protected void createNetwork();
 
     /**
@@ -73,8 +74,8 @@ public abstract class AbstractScenario {
     public AbstractScenario(String name, long seed) {
         this.randomnessEngine = new RandomnessEngine(seed);
         this.name = name;
-        simulator = new Simulator();
-        this.progressMessageIntervals = TimeUnit.SECONDS.toNanos(2);
+        simulator = new Simulator(); //new simulator
+        this.progressMessageIntervals = TimeUnit.SECONDS.toNanos(1); //->ogni quando sono mostrati i messaggi
     }
 
     /**
@@ -90,7 +91,7 @@ public abstract class AbstractScenario {
      * @param progressMessageIntervals the progress message interval described in nanoseconds
      */
     public void setProgressMessageIntervals(long progressMessageIntervals) {
-        this.progressMessageIntervals = progressMessageIntervals;
+        this.progressMessageIntervals = progressMessageIntervals; //per cambiare ogni quando sono mostrati i messaggi
     }
 
     /**
@@ -99,17 +100,24 @@ public abstract class AbstractScenario {
      * @throws IOException
      */
     public void run() throws IOException {
+        //ok, ora è lo scenatio che runna
         System.err.printf("Staring %s...\n", this.name);
+        //creiamo il network
         this.createNetwork();
+        //inseriamo gli eventi
         this.insertInitialEvents();
-
+        //aggiungiamo i loggers (i loggers vengono messi in una lista)
         for (AbstractLogger logger:this.loggers) {
             logger.setScenario(this);
             logger.initialLog();
         }
+        //set starting time
         long simulationStartingTime = System.nanoTime();
         long lastProgressMessageTime = simulationStartingTime;
+        //while la simulazione può runnare
         while (simulator.isThereMoreEvents() && !this.simulationStopCondition()) {
+            //peekevent is the next event to be executed
+            //loggerbefore and next the event
             Event event = simulator.peekEvent();
             for (AbstractLogger logger:this.loggers) {
                 logger.logBeforeEachEvent(event);
@@ -118,6 +126,7 @@ public abstract class AbstractScenario {
             for (AbstractLogger logger:this.loggers) {
                 logger.logAfterEachEvent(event);
             }
+            //se è il caso stampa il messaggio di aggiornamentp
             if (System.nanoTime() - lastProgressMessageTime > this.progressMessageIntervals) {
                 double realTime = TimeUnit.NANOSECONDS.toSeconds(System.nanoTime() - simulationStartingTime);
                 double simulationTime = this.simulator.getSimulationTime();
@@ -130,6 +139,7 @@ public abstract class AbstractScenario {
                 lastProgressMessageTime = System.nanoTime();
             }
         }
+        //fa il final log
         for (AbstractLogger logger:this.loggers) {
             logger.finalLog();
         }

@@ -17,10 +17,12 @@ import jabs.network.p2p.AbstractP2PConnections;
 import jabs.simulator.Simulator;
 
 public class IOTANode extends PeerDLTNode<TangleBlock, TangleTx> implements MinerNode {
+    //iota node implements minernode
+    //and we have the tanglegenesisblock;
     public static final TangleBlock TANGLE_GENESIS_BLOCK =
             new TangleBlock(0, 0, 0, null, null, 32, new TangleTx(1650, 32),1, 0);
 
-    protected Simulator.ScheduledEvent blockGenerationProcess;
+    protected Simulator.ScheduledEvent blockGenerationProcess; //semplicemente instanziamo la variabile
 
     /**
      * @param simulator

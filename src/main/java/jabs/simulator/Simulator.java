@@ -15,19 +15,20 @@ public class Simulator {
      * The queue that contains all events which are going to be executed. This
      * queue is a priority queue sorted by the time in which the event should
      * be executed.
-     */
+     */ //queue containing events
     private final PriorityQueue<ScheduledEvent> eventQueue = new PriorityQueue<>();
 
     /**
      * The simulation execution time of the most recent event
      */
+    //simulation time of the most recent event
     private double simulationTime = 0L;
 
     /**
      * Number of events inserted in the event queue till now (whether simulated
      * or not)
      */
-    private long insertedEvents = 0;
+    private long insertedEvents = 0; //so total number of event inserted in the queue
 
     /**
      * @param event  The event
@@ -43,7 +44,7 @@ public class Simulator {
         @Override
         public Event event() {
             return this.event;
-        }
+        } //the schedulendevent.event() returns the event
 
         /**
          * Returns the execution time of the event.
@@ -53,7 +54,7 @@ public class Simulator {
         @Override
         public double time() {
             return this.time;
-        }
+        } //return execution time of the event, simulation execution time
 
         /**
          * This function is used by the priority queue to sort the scheduled events
@@ -66,7 +67,7 @@ public class Simulator {
          * 1 if the execution time of the object is after the execution of
          * the provided input.
          */
-        public int compareTo(ScheduledEvent o) {
+        public int compareTo(ScheduledEvent o) {//compare simulation execution time of events
             return (this.time < o.time) ? -1 : ((this.time > o.time) ? 1 : (Long.compare(this.number, o.number)));
         }
     }
@@ -79,7 +80,8 @@ public class Simulator {
             ScheduledEvent currentScheduledEvent = eventQueue.poll();
             Event currentEvent = currentScheduledEvent.event();
             simulationTime = currentScheduledEvent.time();
-            currentEvent.execute();
+            currentEvent.execute(); //executenextevent verifies that there is something in the queue end executes the event
+            //this is just an interface, we have to go and check implementation
         }
     }
 
@@ -89,7 +91,7 @@ public class Simulator {
      *
      * @return The next event to be executed in the simulator
      */
-    public Event peekEvent() {
+    public Event peekEvent() { //return event without executing
         if (!eventQueue.isEmpty()) {
             ScheduledEvent currentEvent = eventQueue.peek();
             return currentEvent.event();
@@ -116,6 +118,7 @@ public class Simulator {
      * @return the scheduled event
      */
     public ScheduledEvent putEvent(Event event, double remainingTimeToExecution) {
+        //quindi lo mette come prossimo?
         ScheduledEvent sEvent = new ScheduledEvent(event, simulationTime + remainingTimeToExecution, insertedEvents);
         eventQueue.add(sEvent);
         insertedEvents++;
@@ -132,6 +135,7 @@ public class Simulator {
     public void removeEvent(ScheduledEvent scheduledEvent) {
         this.eventQueue.remove(scheduledEvent);
     }
+    //removes a particular event
 
     /**
      * Returns the simulation time that the latest event has executed

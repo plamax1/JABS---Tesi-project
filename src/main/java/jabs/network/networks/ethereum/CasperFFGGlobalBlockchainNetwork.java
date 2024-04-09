@@ -2,6 +2,7 @@ package jabs.network.networks.ethereum;
 
 import jabs.consensus.config.CasperFFGConfig;
 import jabs.consensus.config.ChainBasedConsensusConfig;
+import jabs.consensus.config.GenericConsensusAlgorithmConfig;
 import jabs.ledgerdata.ethereum.EthereumBlock;
 import jabs.network.networks.Network;
 import jabs.network.stats.ProofOfWorkGlobalNetworkStats;
@@ -23,7 +24,7 @@ public class CasperFFGGlobalBlockchainNetwork<R extends Enum<R>> extends Ethereu
 
     @Override
     public EthereumCasperNode createSampleNode(Simulator simulator, int nodeID, EthereumBlock genesisBlock,
-                                               ChainBasedConsensusConfig chainBasedConsensusConfig) {
+                                               GenericConsensusAlgorithmConfig chainBasedConsensusConfig) {
         R region = (R) sampleRegion();
         return new EthereumCasperNode(simulator, this, nodeID, this.sampleDownloadBandwidth(region),
                 this.sampleUploadBandwidth(region), genesisBlock,
@@ -33,7 +34,7 @@ public class CasperFFGGlobalBlockchainNetwork<R extends Enum<R>> extends Ethereu
     @Override
     public EthereumCasperMiner createSampleMiner(Simulator simulator, int nodeID, double hashPower,
                                                  EthereumBlock genesisBlock,
-                                                 ChainBasedConsensusConfig chainBasedConsensusConfig) {
+                                                 GenericConsensusAlgorithmConfig chainBasedConsensusConfig) {
         R region = (R) sampleRegion();
         return new EthereumCasperMiner(simulator, this, nodeID, this.sampleDownloadBandwidth(region),
                 this.sampleUploadBandwidth(region), hashPower, genesisBlock, (CasperFFGConfig) chainBasedConsensusConfig);

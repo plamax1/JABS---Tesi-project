@@ -5,7 +5,7 @@ import jabs.ledgerdata.SingleParentBlock;
 /**
  */
 public class ChainBasedConsensusConfig<B extends SingleParentBlock<B>>
-        implements ConsensusAlgorithmConfig {
+        extends GenericConsensusAlgorithmConfig {
     private final double averageBlockMiningInterval;
     private final B genesisBlock;
 

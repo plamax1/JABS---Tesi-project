@@ -10,6 +10,7 @@ import java.util.Collections;
 import java.util.List;
 
 public class RandomnessEngine extends MersenneTwister {
+    //il costruttore passa il seed a MersenneTwister
     public RandomnessEngine(long seed) {
         super(seed);
     }

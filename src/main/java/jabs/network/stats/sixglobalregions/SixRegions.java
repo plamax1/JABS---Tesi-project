@@ -1,6 +1,6 @@
 package jabs.network.stats.sixglobalregions;
 
-public enum SixRegions {
+public enum SixRegions { //This is just an enumeration of the regions
     NORTH_AMERICA(0),
     EUROPE(1),
     SOUTH_AMERICA(2),

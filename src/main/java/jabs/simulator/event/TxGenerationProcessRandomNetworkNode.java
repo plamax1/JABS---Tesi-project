@@ -14,6 +14,7 @@ public class TxGenerationProcessRandomNetworkNode extends AbstractTxPoissonProce
 
     @Override
     public void generate() {
+        //ok, in this case we have a process which randomly selects a node and generates a transaction
         this.node = network.getRandomNode();
         node.generateNewTransaction();
     }

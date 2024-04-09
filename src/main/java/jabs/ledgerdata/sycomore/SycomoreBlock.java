@@ -6,9 +6,11 @@ import jabs.ledgerdata.SingleParentBlock;
 import jabs.ledgerdata.SingleParentPoWBlock;
 import jabs.ledgerdata.bitcoin.BitcoinBlockWithoutTx;
 import jabs.network.node.nodes.ethereum.EthereumMinerNode;
+import jabs.network.node.nodes.sycomore.BlockHeader;
 import jabs.network.node.nodes.sycomore.SycomoreMinerNode;
 
 import java.util.HashSet;
+import java.util.LinkedList;
 import java.util.List;
 import java.util.Set;
 
@@ -18,48 +20,55 @@ public class SycomoreBlock extends Block<SycomoreBlock> implements ProofOfWorkBl
     //Try sycomoreblock, let's implement
     //This is the class of the SycomoreBlock
     private final Set<SycomoreBlock> uncles; //? later not needed
-    private final double difficulty;
-    private static final int MAX_LABEL_LENGTH = 20;
-    private static final int C_MIN = 10;
-    private final byte[] label = new byte[MAX_LABEL_LENGTH];
-    //amd we have to add the hash
+
+    private final BlockHeader header;
+    //The min length of a chain is?
+    private static final int C_MIN = 5;
+
+    //For the block we have to keep track of the Label of the block,
+    //the chainLabel, which is the number of the chain,
+    //the height in chain, of which we have to keep track to handle forks ecc.
+    //the total height which we'll need to compute the maxPathLength
+
+
+    private Label label;
+    private int chainLabel;
+    private int heightInChain;
+    private int totalHeight;
     private int load ;
-    //the load of a block;
-    private final int SPLIT_THRESHOLD = 10;
+    //the load of a block, we use as load of the block its size
+    private final int SPLIT_THRESHOLD = 100;
     private final int MERGE_THRESHOLD = 10;
-    private final double weight;
     private String hash;
-    public SycomoreBlock(int size, int height, double creationTime, SycomoreMinerNode creator, List<SycomoreBlock> parents,
+    public SycomoreBlock(BlockHeader header, int chainLabel, String block_label, int heightInChain, int totalHeight, int size, double creationTime, SycomoreMinerNode creator, List<SycomoreBlock> parents,
                          Set<SycomoreBlock> uncles, double difficulty, double weight) {
-        super(size, height, creationTime, creator, parents, ETHEREUM_BLOCK_HASH_SIZE);
+        super(size, totalHeight, creationTime, creator, parents, ETHEREUM_BLOCK_HASH_SIZE);
         this.uncles = uncles;
-        this.weight = weight;
-        this.difficulty = difficulty;
-
-        long unclesDifficultySum = 0;
-        for (SycomoreBlock uncle:uncles) {
-            unclesDifficultySum += uncle.getDifficulty();
-        }
+        this.header= header;
+        this.label = new Label(this, chainLabel, block_label);
+        this.chainLabel = chainLabel;
+        this.heightInChain = heightInChain;
+        this.totalHeight = totalHeight;
     }
 
-    public Set<SycomoreBlock> getUncles() {
-        return this.uncles;
-    }
 
     public double getDifficulty() {
-        return this.difficulty;
+        //return this.difficulty;
+        return 0;
     }
 
     public static SycomoreBlock generateGenesisBlock(double difficulty) {
-        return new SycomoreBlock(0, 0, 0, null, null, new HashSet<>(), difficulty, 0);
+        return new SycomoreBlock(new BlockHeader(), 1, "", 0, 0, 0, 0,null, new LinkedList<SycomoreBlock>()
+        , new HashSet<>(), difficulty, 0);
     }
 
     //return the load of a block
     public int getLoad () {
-
-        return load;
+        return this.getSize();
     }
+
     private double cmp_spl_mrg() {
+        if(this.getParents()!=null){
         //how do we compute the load of a block?
         //dobbiamo esaminare i blocchi da b_c (current block) a b_c-c_min+1
         int i = this.getHeight(); //this is bc
@@ -67,53 +76,68 @@ public class SycomoreBlock extends Block<SycomoreBlock> implements ProofOfWorkBl
         SycomoreBlock cur_block = this;
         while(i >= (i-C_MIN+1)){
             tmp_sum+=cur_block.getLoad();
-            cur_block = this.getParent();
+            if(!this.getParents().isEmpty()){
+            cur_block = this.getParents().get(0);} //We don't need to ensure that we reached the end of the chain
+            //because the chain if of course longer than cmin
+            else{
+                break;
+            }
             i++;}
-        return (double) tmp_sum / C_MIN;
-
+        return (double) tmp_sum / C_MIN;}
+        else
+            return 0;
     }
 
-    ////////////COMPUTE HASH PROBABLY SHOUD NOT STAY HERE
+    ////////////COMPUTE HASH PROBABLY SHOULD NOT STAY HERE
+
+    private int chainlength (){
+        int length = 1;
+        SycomoreBlock curBlock = this;
+        while (curBlock.getParents().size()==1 && curBlock.getParents()!=null){
+            curBlock= curBlock.getParents().get(0);
+            length++;
+        }
+        return length;
+    }
 
     public boolean isSplittable (){
+        if(chainlength()<C_MIN)
+            return false;
         return cmp_spl_mrg()>SPLIT_THRESHOLD;
-
     }
+
     public boolean isMergeable(){
+        if(chainlength()<C_MIN)
+            return false;
         return cmp_spl_mrg()>MERGE_THRESHOLD;
 
     }
-    public byte[] getLabel(){
-        return label;
+    public String getLabel(){
+        return label.getLabelValue();
     }
-    public int distance (SycomoreBlock b){
-        // Result array
-        byte[] result = new byte[this.getLabel().length];
-
-        // Perform XOR operation
-        for (int i = 0; i < this.getLabel().length; i++) {
-            result[i] = (byte) (this.getLabel()[i] ^ b.getLabel()[i]);
-        }
-        // Initialize distance
-        int distance = 0;
-
-        // Iterate through the byte array
-        for (int i = 0; i < result.length; i++) {
-            // Multiply each byte by 2 raised to the power of its index
-            distance += (result[i] & 0xFF) * Math.pow(2, i); // '&' is used to convert byte to unsigned int
-        }
-        return distance;
+    public int getChainLabel(){
+        return this.chainLabel;
     }
+
+    public int getTotalHeight() {return this.totalHeight; }
+
+    public int getHeightInChain() {return this.heightInChain; }
+
+
     /**
      * @return
      */
     @Override
     public double getWeight() {
-        return this.weight;
+        //return this.weight;
+        return 0;
     }
 
-    public SycomoreBlock getParent () {
+    /*public SycomoreBlock getParent () {
         return this.getParents().get(0);
-    }
+    }*/
 
+    public BlockHeader getHeader() {
+        return header;
+    }
 }

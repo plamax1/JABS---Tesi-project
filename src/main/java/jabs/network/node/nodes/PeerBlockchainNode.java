@@ -12,7 +12,7 @@ import java.util.HashMap;
 import java.util.HashSet;
 import java.util.SortedSet;
 import java.util.TreeSet;
-
+//PeerBlockchainNode, this could be any node, just a blockchain node
 public abstract class PeerBlockchainNode<B extends SingleParentBlock<B>, T extends Tx<T>> extends PeerDLTNode<B, T> {
     protected final AbstractChainBasedConsensus<B, T> consensusAlgorithm;
 
@@ -34,21 +34,23 @@ public abstract class PeerBlockchainNode<B extends SingleParentBlock<B>, T exten
 
     @Override
     public void processIncomingPacket(Packet packet) {
+        //this is the function that we call to process an incoming packet...
+        //When is it called? By the packetReceivingProcess
         Message message = packet.getMessage();
         if (message instanceof DataMessage) {
             Data data = ((DataMessage) message).getData();
-            if (data instanceof Block) {
+            if (data instanceof Block) { //if the data is a block
                 B block = (B) data;
                 if (!localBlockTree.contains(block)){
-                    localBlockTree.add(block);
+                    localBlockTree.add(block);//add the block to the localBlocktree
                     alreadySeenBlocks.put(block.getHash(), block);
-                    if (localBlockTree.getLocalBlock(block).isConnectedToGenesis) {
-                        this.processNewBlock(block);
+                    if (localBlockTree.getLocalBlock(block).isConnectedToGenesis) { //ok this returns the local block in the LocalBlockDAG
+                        this.processNewBlock(block); //we process this new block, and even all successors
                         SortedSet<B> newBlocks = new TreeSet<>(localBlockTree.getAllSuccessors(block));
                         for (B newBlock:newBlocks){
                             this.processNewBlock(newBlock);
                         }
-                    } else {
+                    } else {//if it is not connected to genesis we need the hash of them parent...
                         this.networkInterface.addToUpLinkQueue(
                                 new Packet(this, packet.getFrom(),
                                         new RequestDataMessage(block.getParent().getHash())
@@ -56,7 +58,7 @@ public abstract class PeerBlockchainNode<B extends SingleParentBlock<B>, T exten
                         );
                     }
                 }
-            } else if (data instanceof Tx) {
+            } else if (data instanceof Tx) {//if the data is a transaction...
                 T tx = (T) data;
                 if (!alreadySeenTxs.containsValue(tx)){
                     alreadySeenTxs.put(tx.getHash(), tx);
@@ -125,6 +127,7 @@ public abstract class PeerBlockchainNode<B extends SingleParentBlock<B>, T exten
     }
 
     protected abstract void processNewBlock(B block);
+    //process new block etc is implemended in the consensus algorithm.
     protected abstract void processNewVote(Vote vote);
     protected abstract void processNewQuery(Query query);
 

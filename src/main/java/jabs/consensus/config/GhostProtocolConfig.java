@@ -11,4 +11,6 @@ public class GhostProtocolConfig<B extends SingleParentBlock<B>> extends ChainBa
     public GhostProtocolConfig(B genesisBlock, double averageBlockMiningInterval) {
         super(genesisBlock, averageBlockMiningInterval);
     }
+
+
 }

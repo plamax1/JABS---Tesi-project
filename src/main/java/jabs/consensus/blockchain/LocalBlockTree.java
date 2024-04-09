@@ -28,6 +28,8 @@ public class LocalBlockTree<B extends SingleParentBlock<B>> extends LocalBlockDA
      * @param block received block from the network or generated inside
      *              the node itself.
      */
+
+
     public void add(B block) {
         if (!this.localBlockDAG.containsKey(block)) {
             LocalBlock<B> localBlock = new LocalBlock<>(block);

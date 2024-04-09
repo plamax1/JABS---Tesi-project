@@ -2,7 +2,7 @@ package jabs.network.message;
 
 import jabs.ledgerdata.Query;
 
-public class QueryMessage extends Message{
+public class QueryMessage extends Message{ //query message
     private final Query query;
 
     public QueryMessage(Query query) {

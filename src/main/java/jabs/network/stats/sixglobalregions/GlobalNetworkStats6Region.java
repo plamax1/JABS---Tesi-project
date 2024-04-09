@@ -11,6 +11,7 @@ import static jabs.network.stats.sixglobalregions.SixRegions.*;
 import static java.util.Map.entry;
 
 public class GlobalNetworkStats6Region implements NetworkStats<SixRegions> {
+    //networkstats of 6 regions
     protected final RandomnessEngine randomnessEngine;
 
     public static final Map<SixRegions, List<Double>> DOWNLOAD_BANDWIDTH_DISTRIBUTION =

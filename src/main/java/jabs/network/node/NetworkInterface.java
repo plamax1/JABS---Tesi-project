@@ -9,7 +9,7 @@ import jabs.network.node.nodes.Node;
 import jabs.simulator.randengine.RandomnessEngine;
 import jabs.simulator.Simulator;
 
-public class NetworkInterface {
+public class NetworkInterface { //ok questa è la networkinterface relativa al node
     /**
      * Node's total download bandwidth
      */
@@ -33,6 +33,8 @@ public class NetworkInterface {
     /**
      * The process (which is a type of ongoing event) that handles receiving packets and their delays due to bandwidth
      */
+    //so we instantiate the process that receives the messages, and the process that sends the messages, this
+            //for each network interface for each process.
     public PacketReceivingProcess messageReceivingProcess;
 
     /**
@@ -97,6 +99,7 @@ public class NetworkInterface {
      * @param packet the packet to be received
      */
     public void addToDownLinkQueue(Packet packet) {
+        //qui gestiamo i pacchetti in entrata?
         if (!this.networkInterfaceDown) {
             this.addToLinkQueue(packet, this.messageReceivingProcess);
         }
@@ -107,6 +110,7 @@ public class NetworkInterface {
      * @param packet the packet to be sent
      */
     public void addToUpLinkQueue(Packet packet) {
+        //qui gestiamo i pacchetti in uscita?
         if (!this.networkInterfaceDown) {
             this.addToLinkQueue(packet, this.messageSendingProcess);
         }
@@ -118,6 +122,7 @@ public class NetworkInterface {
      * @param processor the up-link/down-link process
      */
     private void addToLinkQueue(Packet packet, AbstractPacketProcessor processor) {
+        //generico ci mettiamo anche il link a cui vanno addati
         if (processor.isQueueEmpty()) {
             simulator.putEvent(processor, processor.processingTime(packet));
         }

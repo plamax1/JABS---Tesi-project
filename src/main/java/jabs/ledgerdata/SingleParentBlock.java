@@ -12,7 +12,7 @@ public class SingleParentBlock<B extends SingleParentBlock<B>> extends Block<B> 
 
         this.getParents().add(parent);
     }
-    //here we redefine the function getparent, returning only the first parent of the list
+    //here we redefine the function getParent, returning only the first parent of the list
     public <B extends SingleParentBlock<B>> B getParent() {
         return (B) this.getParents().get(0);
     }

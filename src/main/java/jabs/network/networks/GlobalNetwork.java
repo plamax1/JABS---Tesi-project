@@ -6,6 +6,7 @@ import jabs.network.node.nodes.Node;
 import jabs.simulator.randengine.RandomnessEngine;
 
 public abstract class GlobalNetwork<N extends Node, R extends Enum<R>> extends Network<N, R> {
+    //What is globalNetwork?
     public final NodeGlobalRegionDistribution<R> nodeDistribution;
 
     public GlobalNetwork(RandomnessEngine randomnessEngine, NodeGlobalNetworkStats<R> networkStats) {
@@ -22,3 +23,4 @@ public abstract class GlobalNetwork<N extends Node, R extends Enum<R>> extends N
         return nodeDistribution.sampleRegion();
     }
 }
+//Is this class to build a Global network?

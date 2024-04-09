@@ -4,7 +4,7 @@ import jabs.ledgerdata.Hash;
 
 import static jabs.ledgerdata.BlockFactory.GET_DATA_OVERHEAD;
 
-public class RequestDataMessage extends Message {
+public class RequestDataMessage extends Message { //A message to request data
     private final Hash payloadHash;
 
     public RequestDataMessage(Hash hash) {

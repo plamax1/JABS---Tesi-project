@@ -11,20 +11,24 @@ import java.util.HashMap;
 import java.util.List;
 
 public abstract class Network<N extends Node, NodeType extends Enum<NodeType>> {
-    protected final List<N> nodes = new ArrayList<N>();
+    //Network wich takes as parameters N which is node, and NodeType, because the network
+    //is relative to a single node???
+    protected final List<N> nodes = new ArrayList<N>(); //list of nodes
     protected final RandomnessEngine randomnessEngine;
-    public final NetworkStats<NodeType> networkStats;
+    public final NetworkStats<NodeType> networkStats; //these are the stats of the network
     public final HashMap<N, NodeType> nodeTypes = new HashMap<>();
+    //what is this hashmap between node and nodetype
 
     protected Network(RandomnessEngine randomnessEngine, NetworkStats<NodeType> networkStats) {
+        //here we instantiate the network
         this.randomnessEngine = randomnessEngine;
         this.networkStats = networkStats;
     }
 
     public N getRandomNode() {
         return nodes.get(randomnessEngine.sampleInt(nodes.size()));
-    }
-
+    } //get a random node
+//So the network has a set of nodes, and we get a random node
     public List<N> getAllNodes() {
         return nodes;
     }
@@ -36,18 +40,23 @@ public abstract class Network<N extends Node, NodeType extends Enum<NodeType>> {
     public double getLatency(N from, N to) {
         return networkStats.getLatency(nodeTypes.get(from), nodeTypes.get(to));
     };
-
+    //latency between 2 nodes
+    //we get sampledownloadbandwidth from NodeType, this simply return the bandwidth
     public long sampleDownloadBandwidth(NodeType type) {
-        return networkStats.sampleDownloadBandwidth(type);
+        return (long) (networkStats.sampleDownloadBandwidth(type)*1);
     };
     public long sampleUploadBandwidth(NodeType type){
-        return networkStats.sampleUploadBandwidth(type);
+        return (long) (networkStats.sampleUploadBandwidth(type)*1);
     };
-
+    //then we have the functions populatenetwork
     public abstract void populateNetwork(Simulator simulator, ConsensusAlgorithmConfig consensusAlgorithmConfig);
+    //populate network cosa fa? bho sistema i nodi nel network
     public abstract void populateNetwork(Simulator simulator, int numNodes,
                                          ConsensusAlgorithmConfig consensusAlgorithmConfig);
-    public abstract void addNode(N node);
+
+    //populate network will be implemented later...
+
+    public abstract void addNode(N node); //function to addNode to the network
 
     public void addNode(N node, NodeType nodeType) {
         nodes.add(node);
@@ -58,4 +67,3 @@ public abstract class Network<N extends Node, NodeType extends Enum<NodeType>> {
         return this.randomnessEngine;
     }
 }
-

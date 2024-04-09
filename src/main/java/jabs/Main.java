@@ -58,9 +58,18 @@ public class Main {
         scenario.run();
 */
         // Simulate Snow LAN network of 40 nodes for 1 hour
-        scenario = new SycomoreScenario("One hour in the life of Sycomore", 1,
-                3600, 13.3);
+        //scenario = new SycomoreScenario("One hour in the life of Sycomore", 1,
+          //    900, 13.3);
+        scenario = new NormalEthereumNetworkScenario("One hour in the life of Ethereum", 1,
+                3600, 4);
         scenario.AddNewLogger(new SnowCSVLogger(Paths.get("output/snow-simulation-log.csv")));
+        scenario.AddNewLogger(new BlockPropagationDelayLogger(
+                Paths.get("output/ethereum-90-propagation-delay-log.csv"), 0.9));
+        scenario.AddNewLogger(new FinalUncleBlocksLogger(
+                Paths.get("output/ethereum-uncle-rate.csv")));
+        scenario.AddNewLogger(new BlockConfirmationLogger(Paths.get("output/eth-block-confirmation.csv")));
+        scenario.AddNewLogger(new LiveUncleBlocksLogger(Paths.get("output/eth-liveUncleLog.csv")));
+        scenario.AddNewLogger(new K_ConfirmationBlockLogger(Paths.get("output/K_Level_Block_Confirmation.csv"),"6"));
         scenario.run();
         // IOTA
 

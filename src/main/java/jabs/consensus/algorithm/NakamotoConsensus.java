@@ -22,8 +22,11 @@ public class NakamotoConsensus<B extends SingleParentBlock<B>, T extends Tx<T>>
 
     @Override
     public void newIncomingBlock(B block) {
-        if (block.getHeight() > longestChainLen) {
+        if (block.getHeight() > longestChainLen) { //if the height of the block is low we don't do anything...
+                                                    //in other words what we do is to take as good the first
+            //valid block received
             this.longestChainLen = block.getHeight();
+            //and we update the chain using this block
             this.currentMainChainHead = block;
             this.updateChain();
         }
