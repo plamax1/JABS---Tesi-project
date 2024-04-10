@@ -98,4 +98,70 @@ public class SycomoreLegacyFunction {
     }
 
 }
+
+
+    private LinkedList<SycomoreBlock> find_predecessors(BlockHeader header, short nonce){
+        //s is the number of bit of the longest successor label
+        //Here we get the predecessor, or predecessor, in case of 2 mergeable blocks,
+        //but don't add any reference to the block header.
+        LinkedList<SycomoreBlock> parents = new LinkedList<SycomoreBlock>();
+            int s =2;
+            long b = Long.parseLong(String.valueOf(header.hashCode()).concat(String.valueOf(nonce))) % 2^s;
+        int minDistance = Integer.MAX_VALUE; // Initialize with maximum value
+        BlockHeaderEntry closestElement = null; // Initialize with null
+        ArrayList<BlockHeaderEntry> headers = header.getHeadersList();
+        for (BlockHeaderEntry element : headers) {
+            int distance = SycomoreBlockUtils.binaryDistance(element.getLabel(), String.valueOf(b)); // Call your distance function
+            if (distance < minDistance) {
+                minDistance = distance;
+                closestElement = element;
+            }
+        }
+        closestElement.getHash().getData();
+        //Verifica
+        parents.add((SycomoreBlock)closestElement.getHash().getData());
+
+        return parents;
+
+
+    }
+
+        private int find_nonce(BlockHeader header, int difficulty){
+        //We should find a nonce v such that hash(H|v)<T, where T depends on difficulty.
+        //Since we don't want to do the effort to find the nonce, but we still want it to
+        //depend on the header we do the following.
+        int resultLength=10;
+        String input = header.toString();
+        StringBuilder transformedString = new StringBuilder();
+
+
+        for (int i = 0; i < input.length(); i++) {
+            char currentChar = input.charAt(i);
+            // Apply the deterministic transformation
+            char transformedChar = (char) (currentChar + 1);
+            transformedString.append(transformedChar);
+        }
+
+        // Ensure the length of the transformed string is equal to resultLength
+        while (transformedString.length() < resultLength) {
+            transformedString.append('0'); // Pad with zeros if necessary
+        }
+
+        // Truncate or pad if necessary to ensure the length matches resultLength
+        transformedString.setLength(resultLength);
+
+        // Calculate the hash code of the transformed string
+        int result = Math.abs(transformedString.toString().hashCode());
+
+        return result;
+
+    }
+
+        private String compute_m (){
+        //we have to extract the locally pending transactions whose identifier is prefixed by l_i
+        //by now we generate this number at random
+        //But since in this case we do not want to simulate the security of the network we can just insert
+        // a random number
+        return String.valueOf(randomnessEngine.nextInt()).substring(0, 4);
+    }
         */

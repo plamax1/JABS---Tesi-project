@@ -20,9 +20,9 @@ public class SycomoreBlockWithTx extends SycomoreBlock implements BlockWithTx<Sy
     private final Set<SycomoreTx> Txs;
     private final long totalGas;
 
-    public SycomoreBlockWithTx(BlockHeader header,int chainHeight, String label, int height, double creationTime, SycomoreMinerNode creator, LinkedList<SycomoreBlock> parents,
+    public SycomoreBlockWithTx(BlockHeader header, String block_label, int heightInChain,int totalHeight, double creationTime, SycomoreMinerNode creator, LinkedList<SycomoreBlock> parents,
                                Set<SycomoreBlock> uncles, Set<SycomoreTx> txs, long difficulty, double weight) {
-        super(header,0,label,0, height, creationTime, creator, parents, uncles, difficulty, weight);
+        super(header,block_label,heightInChain, totalHeight,0, creationTime, creator, parents, uncles, difficulty, weight);
         Txs = txs;
 
         int totalSize = ETHEREUM_BLOCK_HEADER_SIZE;
@@ -42,7 +42,7 @@ public class SycomoreBlockWithTx extends SycomoreBlock implements BlockWithTx<Sy
     }
 
     public static SycomoreBlockWithTx generateGenesisBlock(long difficulty) {
-        return new SycomoreBlockWithTx(new BlockHeader(),0, "", 0, 0, null, null,
+        return new SycomoreBlockWithTx(new BlockHeader(), "", 0, 0, 0,null, null,
                 new HashSet<>(), new HashSet<>(), difficulty, 0);
     }
 

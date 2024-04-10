@@ -8,10 +8,7 @@ import jabs.ledgerdata.Block;
 import jabs.ledgerdata.ethereum.EthereumBlock;
 import jabs.ledgerdata.ethereum.EthereumBlockWithTx;
 import jabs.ledgerdata.ethereum.EthereumTx;
-import jabs.ledgerdata.sycomore.SycomoreBlock;
-import jabs.ledgerdata.sycomore.SycomoreBlockUtils;
-import jabs.ledgerdata.sycomore.SycomoreBlockWithTx;
-import jabs.ledgerdata.sycomore.SycomoreTx;
+import jabs.ledgerdata.sycomore.*;
 import jabs.network.message.DataMessage;
 import jabs.network.message.Packet;
 import jabs.network.networks.Network;
@@ -39,6 +36,8 @@ public class SycomoreMinerNode extends SycomoreNode implements MinerNode {
     private final int MAX_UNBALANCE = 5;
     Random rand = new Random();
 
+    Set<SycomoreTx> blockTxs = new HashSet<>();
+
     //anche qui abbiamo 2 costruttori
     public SycomoreMinerNode(Simulator simulator, Network network, int nodeID,
                              long downloadBandwidth, long uploadBandwidth, double hashPower, SycomoreBlock genesisBlock,
@@ -46,6 +45,8 @@ public class SycomoreMinerNode extends SycomoreNode implements MinerNode {
         //nel primo prendiamo il genesisblock e la config del protocol
         super(simulator, network, nodeID, downloadBandwidth, uploadBandwidth, genesisBlock, sycomoreProtocolConfig);
         this.hashPower = hashPower;
+        blockTxs = new HashSet<>();
+
     }
 
     public SycomoreMinerNode(Simulator simulator, Network network, int nodeID, long downloadBandwidth,
@@ -54,6 +55,7 @@ public class SycomoreMinerNode extends SycomoreNode implements MinerNode {
         //nel secondo prendiamo abstractchainbasedconsensus
         super(simulator, network, nodeID, downloadBandwidth, uploadBandwidth, consensusAlgorithm);
         this.hashPower = hashPower;
+        blockTxs = new HashSet<>();
     }
 
 
@@ -62,7 +64,9 @@ public class SycomoreMinerNode extends SycomoreNode implements MinerNode {
         //1 - Find all the leaves of the chain
         BlockHeader header = new BlockHeader();
         int height;
-        int newBlockChainHeight;
+        int newBlockChainLabel;
+        int newBlockTotalHeight;
+        int newBlockHeightInChain;
         String newBlockLabel;
 
         Set<SycomoreBlock> leafBlocks = this.localBlockTree.getChildlessBlocks();
@@ -71,47 +75,99 @@ public class SycomoreMinerNode extends SycomoreNode implements MinerNode {
         //Since this is a simulation, we extract at random the predecessor
         System.err.println(usableLeaves.size());
         SycomoreBlock parentBlock = usableLeaves.get(rand.nextInt(usableLeaves.size()));
-        newBlockChainHeight=parentBlock.getChainHeight();
-        newBlockLabel = parentBlock.getLabel();
+        LinkedList<SycomoreBlock> newBlockParents = new LinkedList<SycomoreBlock>();
+        if(parentBlock.isSplittable()){
+            //The block is splittable, so we can produce 2 child blocks:
+            newBlockParents.add(parentBlock);
 
-        //Ora dobbiamo controllare se il blocco è splittable o mergeable!
-
-
-        //once the header is constructed we use POW to find the nonce v...
-        //1.3 once we constructed the header we find the nonce v
-        int nonce = find_nonce( header, 10);
-        //here we pass the header to this function and the function will return us the
-        //choosen label
-        //1.4 Now we have the block to which append the new block
-        LinkedList<SycomoreBlock> parents = new LinkedList<SycomoreBlock>();
-        parents.add(parentBlock);
-        //TODO we have to get the parents from the labels
-        //TODO implement multiple blocks... in case of mergeable/splittble blocks
-
-        //1.5 Add transactions in the block
-
-        Set<SycomoreTx> blockTxs = new HashSet<>();
-        long totalGas = 0;
-        for (SycomoreTx sycomoreTx:memPool) { //for each transaction in the mempool
-            if ((totalGas + sycomoreTx.getGas()) > MAXIMUM_BLOCK_GAS) {
-                break;
+            //BLOCK 1:
+            //Header??
+            newBlockLabel = parentBlock.getLabel().concat("0");
+            newBlockHeightInChain=0; //because we are starting a new Chain
+            newBlockTotalHeight = parentBlock.getTotalHeight()+1;
+            this.blockTxs = new HashSet<>();
+            long totalGas = 0;
+            for (SycomoreTx sycomoreTx:memPool) { //for each transaction in the mempool
+                if ((totalGas + sycomoreTx.getGas()) > MAXIMUM_BLOCK_GAS) {
+                    break;
+                }
+                blockTxs.add(sycomoreTx);
+                totalGas += sycomoreTx.getGas();
             }
-            blockTxs.add(sycomoreTx);
-            totalGas += sycomoreTx.getGas();
+            SycomoreBlockWithTx newSycoBlockWithTX = new SycomoreBlockWithTx(new BlockHeader(),newBlockLabel,newBlockHeightInChain,newBlockTotalHeight,simulator.getSimulationTime(),this, newBlockParents,null, blockTxs,0,0);
+            spreadBlock(newSycoBlockWithTX);
+            //BLOCK 2
+            //Header??
+            newBlockLabel = parentBlock.getLabel().concat("1");
+            newBlockHeightInChain=0; //because we are starting a new Chain
+            newBlockTotalHeight = parentBlock.getTotalHeight()+1;
+            this.blockTxs = new HashSet<>();
+            totalGas = 0;
+            for (SycomoreTx sycomoreTx:memPool) { //for each transaction in the mempool
+                if ((totalGas + sycomoreTx.getGas()) > MAXIMUM_BLOCK_GAS) {
+                    break;
+                }
+                blockTxs.add(sycomoreTx);
+                totalGas += sycomoreTx.getGas();
+            }
+            newSycoBlockWithTX = new SycomoreBlockWithTx(new BlockHeader(),newBlockLabel,newBlockHeightInChain,newBlockTotalHeight,simulator.getSimulationTime(),this, newBlockParents,null, blockTxs,0,0);
+            spreadBlock(newSycoBlockWithTX);
+
+
         }
 
-        //1.6 Create the new Block
-        //The height in sycomoreblock is the legth of the label?
-        SycomoreBlockWithTx sycomoreBlockWithTx = new SycomoreBlockWithTx(header,newBlockChainHeight,newBlockLabel,parents.getFirst().getHeight()+1, simulator.getSimulationTime(),
-                this, parents,null, blockTxs, 0,0);
-        //System.err.println("New Syco Block Created");
-        //System.err.println("Label: "+ sycomoreBlockWithTx.getLabel()+ "* from miner: " + sycomoreBlockWithTx.getCreator() + "height: " + sycomoreBlockWithTx.getHeight());
-        //1.7 process the new block
-        this.processIncomingPacket(
-                new Packet(
-                        this, this, new DataMessage(sycomoreBlockWithTx)
-                )
-        );
+        if(parentBlock.isMergeable()){
+            //Se il blocco è mergeable:
+            //1: Controlliamo se anche il fratello è mergeable, se no lo trattiamo come un blocco normale
+            //TODO controllare che getleaf funzioni bene, anche per blocchi con piu parent
+            //Se tutti e 2 sono mergeable, creiamo un nuovo blocco con quei 2 blocchi come parents
+            SycomoreBlock brother = find_brother(parentBlock);
+            if (brother!=null){
+                //Quindi esiste unn fratello mergeable
+                newBlockParents.add(parentBlock);
+                newBlockParents.add(brother);
+                newBlockLabel = parentBlock.getLabel().substring(0, parentBlock.getLabel().length() - 1);
+                newBlockHeightInChain=0; //because we are starting a new Chain
+                newBlockTotalHeight = parentBlock.getTotalHeight()+1;
+
+                this.blockTxs = new HashSet<>();
+                long totalGas = 0;
+                for (SycomoreTx sycomoreTx:memPool) { //for each transaction in the mempool
+                    if ((totalGas + sycomoreTx.getGas()) > MAXIMUM_BLOCK_GAS) {
+                        break;
+                    }
+                    blockTxs.add(sycomoreTx);
+                    totalGas += sycomoreTx.getGas();
+                }
+                SycomoreBlockWithTx newSycoBlockWithTX = new SycomoreBlockWithTx(new BlockHeader(),newBlockLabel,newBlockHeightInChain,newBlockTotalHeight,simulator.getSimulationTime(),this, newBlockParents,null, blockTxs,0,0);
+                spreadBlock(newSycoBlockWithTX);
+
+            }
+
+            //The block is not splittable nor mergeable
+            else{
+                newBlockParents.add(parentBlock);
+                newBlockLabel = parentBlock.getLabel();
+                newBlockHeightInChain= parentBlock.getHeightInChain()+1; //because we are starting a new Chain
+                newBlockTotalHeight = parentBlock.getTotalHeight()+1;
+
+                this.blockTxs = new HashSet<>();
+                long totalGas = 0;
+                for (SycomoreTx sycomoreTx:memPool) { //for each transaction in the mempool
+                    if ((totalGas + sycomoreTx.getGas()) > MAXIMUM_BLOCK_GAS) {
+                        break;
+                    }
+                    blockTxs.add(sycomoreTx);
+                    totalGas += sycomoreTx.getGas();
+                }
+                SycomoreBlockWithTx newSycoBlockWithTX = new SycomoreBlockWithTx(new BlockHeader(),newBlockLabel,newBlockHeightInChain,newBlockTotalHeight,simulator.getSimulationTime(),this, newBlockParents,null, blockTxs,0,0);
+                spreadBlock(newSycoBlockWithTX);
+            }
+
+        }
+
+
+
     }
     /**
      *
@@ -155,6 +211,11 @@ public class SycomoreMinerNode extends SycomoreNode implements MinerNode {
         return usableLeaves;
     }
 
+    private SycomoreBlock find_brother(SycomoreBlock mergeable_block){
+        return this.localBlockTree.getAllBlocks().stream().filter(block ->((block.getLabel().length()==mergeable_block.getLabel().length()) && SycomoreBlockUtils.binaryDistance(mergeable_block.getLabel(),block.getLabel())==1) && (mergeable_block.getTotalHeight()==block.getTotalHeight())).toList().get(0);
+
+    }
+
     @Override
     protected void processNewTx(SycomoreTx sycomoreTx, Node from) {
         // add to memPool
@@ -194,66 +255,16 @@ public class SycomoreMinerNode extends SycomoreNode implements MinerNode {
 
         return label;
     }
-    private String compute_m (){
-        //we have to extract the locally pending transactions whose identifier is prefixed by l_i
-        //by now we generate this number at random
-        //But since in this case we do not want to simulate the security of the network we can just insert
-        // a random number
-        return String.valueOf(randomnessEngine.nextInt()).substring(0, 4);
-    }
-    private int find_nonce(BlockHeader header, int difficulty){
-        //We should find a nonce v such that hash(H|v)<T, where T depends on difficulty.
-        //Since we don't want to do the effort to find the nonce, but we still want it to
-        //depend on the header we do the following.
-        int resultLength=10;
-        String input = header.toString();
-        StringBuilder transformedString = new StringBuilder();
 
-
-        for (int i = 0; i < input.length(); i++) {
-            char currentChar = input.charAt(i);
-            // Apply the deterministic transformation
-            char transformedChar = (char) (currentChar + 1);
-            transformedString.append(transformedChar);
-        }
-
-        // Ensure the length of the transformed string is equal to resultLength
-        while (transformedString.length() < resultLength) {
-            transformedString.append('0'); // Pad with zeros if necessary
-        }
-
-        // Truncate or pad if necessary to ensure the length matches resultLength
-        transformedString.setLength(resultLength);
-
-        // Calculate the hash code of the transformed string
-        int result = Math.abs(transformedString.toString().hashCode());
-
-        return result;
+    private void spreadBlock(SycomoreBlock sycomoreBlockWithTx){
+        this.processIncomingPacket(
+                new Packet(
+                        this, this, new DataMessage(sycomoreBlockWithTx)
+                )
+        );
 
     }
-    private LinkedList<SycomoreBlock> find_predecessors(BlockHeader header, short nonce){
-        //s is the number of bit of the longest successor label
-        //Here we get the predecessor, or predecessor, in case of 2 mergeable blocks,
-        //but don't add any reference to the block header.
-        LinkedList<SycomoreBlock> parents = new LinkedList<SycomoreBlock>();
-            int s =2;
-            long b = Long.parseLong(String.valueOf(header.hashCode()).concat(String.valueOf(nonce))) % 2^s;
-        int minDistance = Integer.MAX_VALUE; // Initialize with maximum value
-        BlockHeaderEntry closestElement = null; // Initialize with null
-        ArrayList<BlockHeaderEntry> headers = header.getHeadersList();
-        for (BlockHeaderEntry element : headers) {
-            int distance = SycomoreBlockUtils.binaryDistance(element.getLabel(), String.valueOf(b)); // Call your distance function
-            if (distance < minDistance) {
-                minDistance = distance;
-                closestElement = element;
-            }
-        }
-        closestElement.getHash().getData();
-        //Verifica
-        parents.add((SycomoreBlock)closestElement.getHash().getData());
-
-        return parents;
 
 
-    }
+
 }

@@ -40,13 +40,13 @@ public class SycomoreBlock extends Block<SycomoreBlock> implements ProofOfWorkBl
     private final int SPLIT_THRESHOLD = 100;
     private final int MERGE_THRESHOLD = 10;
     private String hash;
-    public SycomoreBlock(BlockHeader header, int chainLabel, String block_label, int heightInChain, int totalHeight, int size, double creationTime, SycomoreMinerNode creator, List<SycomoreBlock> parents,
+    public SycomoreBlock(BlockHeader header, String block_label, int heightInChain, int totalHeight, int size, double creationTime, SycomoreMinerNode creator, List<SycomoreBlock> parents,
                          Set<SycomoreBlock> uncles, double difficulty, double weight) {
         super(size, totalHeight, creationTime, creator, parents, ETHEREUM_BLOCK_HASH_SIZE);
         this.uncles = uncles;
         this.header= header;
         this.label = new Label(this, chainLabel, block_label);
-        this.chainLabel = chainLabel;
+        //this.chainLabel = chainLabel;
         this.heightInChain = heightInChain;
         this.totalHeight = totalHeight;
     }
@@ -58,7 +58,7 @@ public class SycomoreBlock extends Block<SycomoreBlock> implements ProofOfWorkBl
     }
 
     public static SycomoreBlock generateGenesisBlock(double difficulty) {
-        return new SycomoreBlock(new BlockHeader(), 1, "", 0, 0, 0, 0,null, new LinkedList<SycomoreBlock>()
+        return new SycomoreBlock(new BlockHeader(),"", 0, 0, 0, 0,null, new LinkedList<SycomoreBlock>()
         , new HashSet<>(), difficulty, 0);
     }
 

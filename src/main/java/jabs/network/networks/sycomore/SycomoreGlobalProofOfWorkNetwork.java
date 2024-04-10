@@ -36,7 +36,7 @@ public class SycomoreGlobalProofOfWorkNetwork<R extends Enum<R>> extends //Sycom
 
     //
        public SycomoreBlock genesisBlock(double difficulty) {
-            return new SycomoreBlock(new BlockHeader(),1, "", 0, 0, 0, 0, null, null, new HashSet<>(), difficulty,
+            return new SycomoreBlock(new BlockHeader(), "", 0, 0, 0, 0, null, null, new HashSet<>(), difficulty,
               0);
        }
 @Override
