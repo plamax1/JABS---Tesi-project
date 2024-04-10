@@ -31,7 +31,7 @@ public class SycomoreConsensusAlgorithm extends AbstractDAGBasedConsensus<Sycomo
 
     //With Sycomore we have more than one chain, and each chain has a different label
     // but for each chain we need to keep the head for each chain.
-    private Map<Integer, SycomoreBlock> chainHeadSet;
+    private Map<String, SycomoreBlock> chainHeadSet;
 
 
     public SycomoreConsensusAlgorithm(LocalBlockDAG<SycomoreBlock> localBlockDAG, SycomoreProtocolConfig sycomoreProtocolConfig) {
@@ -50,7 +50,6 @@ public class SycomoreConsensusAlgorithm extends AbstractDAGBasedConsensus<Sycomo
     @Override
     public void newIncomingBlock(SycomoreBlock block) {
         Set<SycomoreBlock> allblocks = this.localBlockDAG.getAllBlocks();
-        int incomingBlockChainLabel = block.getChainLabel();
         String incomingBlockLabel = block.getLabel();
         int totalIncomingBlockHeight = block.getTotalHeight();
         int incomingBlockHeightInChain = 0;
@@ -59,21 +58,23 @@ public class SycomoreConsensusAlgorithm extends AbstractDAGBasedConsensus<Sycomo
         //We have to check if this block is a new Block or it is a fork
 
         SycomoreBlock winnerBlock;
+
         //check if this block is already present in the chain...
         for (SycomoreBlock blockEntry: allblocks){
-            if(totalIncomingBlockHeight == blockEntry.getHeight() &&
-                    incomingBlockLabel.equals(blockEntry.getLabel()) &&
-                    incomingBlockChainLabel == blockEntry.getChainLabel()
+            if(totalIncomingBlockHeight == blockEntry.getTotalHeight() &&
+                    incomingBlockLabel.equals(blockEntry.getLabel())
                     && blockEntry.getParents().equals(block.getParents())){
                 //We have to find which between the two blocks has the highest
                 //confirmation level
+
+                //TODO Does getAllSuccessors work well?
                 HashSet<SycomoreBlock> EntrySuccessors = this.localBlockDAG.getAllSuccessors(blockEntry);
                 HashSet<SycomoreBlock> IncomingBlockSuccessors = this.localBlockDAG.getAllSuccessors(block);
                 if(findMaxHeight(EntrySuccessors)>findMaxHeight(IncomingBlockSuccessors))
                     winnerBlock=blockEntry;
                 else
                     winnerBlock=block;
-                chainHeadSet.put(winnerBlock.getChainLabel(), winnerBlock);
+                chainHeadSet.put(winnerBlock.getLabel(), winnerBlock);
 
                 updateChain(); //Dobbiamo aggiornare la situazione dei blocchi confermati
                 //In this case we have a fork!!

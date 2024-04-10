@@ -6,10 +6,9 @@ public class Label {
     private int chainHeight;
     private SycomoreBlock block;
 
-            public Label (SycomoreBlock block, int chainHeight, String label){
+            public Label (SycomoreBlock block, String label){
                 this.block=block;
                 this.label=label;
-                this.chainHeight=chainHeight;
             }
 
     public SycomoreBlock getBlock(){

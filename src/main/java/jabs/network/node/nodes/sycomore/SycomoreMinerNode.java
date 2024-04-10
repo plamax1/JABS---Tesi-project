@@ -60,6 +60,11 @@ public class SycomoreMinerNode extends SycomoreNode implements MinerNode {
 
 
     public void generateNewBlock() {
+
+        //IMPORTANT, since we cannot create an HASHMAP in the consensus algo with an empty string
+        //as key, we have to handle the thing.
+        //IDEA: each label starts with "ε", we and we cut it when we compute binary_distance
+        //We'll never meet the condition to remove "ε"
         //What do we do:
         //1 - Find all the leaves of the chain
         BlockHeader header = new BlockHeader();

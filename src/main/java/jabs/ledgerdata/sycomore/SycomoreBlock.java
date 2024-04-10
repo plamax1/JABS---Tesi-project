@@ -45,7 +45,7 @@ public class SycomoreBlock extends Block<SycomoreBlock> implements ProofOfWorkBl
         super(size, totalHeight, creationTime, creator, parents, ETHEREUM_BLOCK_HASH_SIZE);
         this.uncles = uncles;
         this.header= header;
-        this.label = new Label(this, chainLabel, block_label);
+        this.label = new Label(this, block_label);
         //this.chainLabel = chainLabel;
         this.heightInChain = heightInChain;
         this.totalHeight = totalHeight;
@@ -58,7 +58,7 @@ public class SycomoreBlock extends Block<SycomoreBlock> implements ProofOfWorkBl
     }
 
     public static SycomoreBlock generateGenesisBlock(double difficulty) {
-        return new SycomoreBlock(new BlockHeader(),"", 0, 0, 0, 0,null, new LinkedList<SycomoreBlock>()
+        return new SycomoreBlock(new BlockHeader(),"ε", 0, 0, 0, 0,null, new LinkedList<SycomoreBlock>()
         , new HashSet<>(), difficulty, 0);
     }
 
@@ -115,9 +115,7 @@ public class SycomoreBlock extends Block<SycomoreBlock> implements ProofOfWorkBl
     public String getLabel(){
         return label.getLabelValue();
     }
-    public int getChainLabel(){
-        return this.chainLabel;
-    }
+
 
     public int getTotalHeight() {return this.totalHeight; }
 

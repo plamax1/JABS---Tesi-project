@@ -42,7 +42,7 @@ public class SycomoreBlockWithTx extends SycomoreBlock implements BlockWithTx<Sy
     }
 
     public static SycomoreBlockWithTx generateGenesisBlock(long difficulty) {
-        return new SycomoreBlockWithTx(new BlockHeader(), "", 0, 0, 0,null, null,
+        return new SycomoreBlockWithTx(new BlockHeader(), "ε", 0, 0, 0,null, null,
                 new HashSet<>(), new HashSet<>(), difficulty, 0);
     }
 

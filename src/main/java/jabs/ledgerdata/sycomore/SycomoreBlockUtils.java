@@ -21,6 +21,7 @@ public class SycomoreBlockUtils {
     }
 
     public static String xorBinaryStrings(String binary1, String binary2) {
+
         // Make sure the input strings have the same length
         if (binary1.length() != binary2.length()) {
             return String.valueOf(Integer.MAX_VALUE);
@@ -42,7 +43,10 @@ public class SycomoreBlockUtils {
     }
 
     public static int binaryDistance(String str1, String str2) {
-        return binaryToDecimal(xorBinaryStrings(str1, str2));
+        //We have to remove the first char "ε"
+        String str1_adj = str1.substring(1);
+        String str2_adj = str2.substring(1);
+        return binaryToDecimal(xorBinaryStrings(str1_adj, str2_adj));
 
     }
 }
