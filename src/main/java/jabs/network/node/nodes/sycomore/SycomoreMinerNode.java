@@ -46,6 +46,7 @@ public class SycomoreMinerNode extends SycomoreNode implements MinerNode {
         super(simulator, network, nodeID, downloadBandwidth, uploadBandwidth, genesisBlock, sycomoreProtocolConfig);
         this.hashPower = hashPower;
         blockTxs = new HashSet<>();
+        System.err.println("Hi, this is sycomore node: " + this.toString());
 
     }
 
@@ -60,6 +61,8 @@ public class SycomoreMinerNode extends SycomoreNode implements MinerNode {
 
 
     public void generateNewBlock() {
+
+        System.err.println("Generate new Block called!");
 
         //IMPORTANT, since we cannot create an HASHMAP in the consensus algo with an empty string
         //as key, we have to handle the thing.
@@ -76,12 +79,17 @@ public class SycomoreMinerNode extends SycomoreNode implements MinerNode {
 
         Set<SycomoreBlock> leafBlocks = this.localBlockTree.getChildlessBlocks();
 
+        System.err.println("leaf Blocks: " + leafBlocks.toString());
+
         List<SycomoreBlock> usableLeaves = usableLeaves(leafBlocks);
         //Since this is a simulation, we extract at random the predecessor
-        System.err.println(usableLeaves.size());
+        System.err.println("Usable leaves: "+ String.valueOf(usableLeaves.size()));
         SycomoreBlock parentBlock = usableLeaves.get(rand.nextInt(usableLeaves.size()));
         LinkedList<SycomoreBlock> newBlockParents = new LinkedList<SycomoreBlock>();
         if(parentBlock.isSplittable()){
+            System.err.println("if splittable ");
+
+
             //The block is splittable, so we can produce 2 child blocks:
             newBlockParents.add(parentBlock);
 
@@ -122,6 +130,8 @@ public class SycomoreMinerNode extends SycomoreNode implements MinerNode {
         }
 
         if(parentBlock.isMergeable()){
+            System.err.println("if mergeable ");
+
             //Se il blocco è mergeable:
             //1: Controlliamo se anche il fratello è mergeable, se no lo trattiamo come un blocco normale
             //TODO controllare che getleaf funzioni bene, anche per blocchi con piu parent
@@ -147,10 +157,12 @@ public class SycomoreMinerNode extends SycomoreNode implements MinerNode {
                 SycomoreBlockWithTx newSycoBlockWithTX = new SycomoreBlockWithTx(new BlockHeader(),newBlockLabel,newBlockHeightInChain,newBlockTotalHeight,simulator.getSimulationTime(),this, newBlockParents,null, blockTxs,0,0);
                 spreadBlock(newSycoBlockWithTX);
 
-            }
+            }}
 
             //The block is not splittable nor mergeable
             else{
+                System.err.println("The block is not splittable nor mergeable: ");
+
                 newBlockParents.add(parentBlock);
                 newBlockLabel = parentBlock.getLabel();
                 newBlockHeightInChain= parentBlock.getHeightInChain()+1; //because we are starting a new Chain
@@ -169,7 +181,7 @@ public class SycomoreMinerNode extends SycomoreNode implements MinerNode {
                 spreadBlock(newSycoBlockWithTX);
             }
 
-        }
+
 
 
 

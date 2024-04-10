@@ -27,7 +27,6 @@ public class SycomoreConsensusAlgorithm extends AbstractDAGBasedConsensus<Sycomo
 
     //LocalBlockDAG<SycomoreBlock> localBlockTree;
     Set<SycomoreBlock> orphanSet;
-    private Map<Integer, SycomoreChain> chainSet;
 
     //With Sycomore we have more than one chain, and each chain has a different label
     // but for each chain we need to keep the head for each chain.
@@ -36,16 +35,14 @@ public class SycomoreConsensusAlgorithm extends AbstractDAGBasedConsensus<Sycomo
 
     public SycomoreConsensusAlgorithm(LocalBlockDAG<SycomoreBlock> localBlockDAG, SycomoreProtocolConfig sycomoreProtocolConfig) {
         super(localBlockDAG);
+        this.chainHeadSet = new HashMap<>();
         this.originOfGhost = localBlockDAG.getGenesisBlock();
         this.newIncomingBlock(localBlockDAG.getGenesisBlock());
         this.averageBlockMiningInterval = sycomoreProtocolConfig.averageBlockMiningInterval();
-        this.chainHeadSet = new HashMap<>();
-        //this.chainSet = new HashMap<>();
-        //chainSet.put(1 , new SycomoreChain(1));
-        //chainSet.get(1).addBlock(localBlockDAG.getGenesisBlock());
-        chainHeadSet.put(1, localBlockDAG.getGenesisBlock());
+        chainHeadSet.put("ε", localBlockDAG.getGenesisBlock());
         //Ok, so we have created the chainSet and added the first block
-                 }
+        System.err.println("Chain Head Set " + chainHeadSet.toString());
+    }
 
     @Override
     public void newIncomingBlock(SycomoreBlock block) {
@@ -53,6 +50,8 @@ public class SycomoreConsensusAlgorithm extends AbstractDAGBasedConsensus<Sycomo
         String incomingBlockLabel = block.getLabel();
         int totalIncomingBlockHeight = block.getTotalHeight();
         int incomingBlockHeightInChain = 0;
+
+        boolean fork_flag = false;
 
         //We receive a new block, and we know that this block is connected to genesis
         //We have to check if this block is a new Block or it is a fork
@@ -64,6 +63,7 @@ public class SycomoreConsensusAlgorithm extends AbstractDAGBasedConsensus<Sycomo
             if(totalIncomingBlockHeight == blockEntry.getTotalHeight() &&
                     incomingBlockLabel.equals(blockEntry.getLabel())
                     && blockEntry.getParents().equals(block.getParents())){
+                fork_flag = true;
                 //We have to find which between the two blocks has the highest
                 //confirmation level
 
@@ -77,20 +77,23 @@ public class SycomoreConsensusAlgorithm extends AbstractDAGBasedConsensus<Sycomo
                 chainHeadSet.put(winnerBlock.getLabel(), winnerBlock);
 
                 updateChain(); //Dobbiamo aggiornare la situazione dei blocchi confermati
-                //In this case we have a fork!!
-                //How do we handle forks??
-                //TODO
+
             }
             //In the case we don't have forks
             //We simpy add the block to the chain
             //TODO
 
         }
-        if(nofork){
+        if(!fork_flag){
             //se non si tratta di un fork, ma di un nuovo blocco.
-            //e dobbiamo gestire la cosa nel caso si tratti di nuova chain creata e chain eliminata
-            if(incomingBlockHeightInChain>chainHeadSet.get(incomingBlockChainLabel).getHeightInChain()){
-                chainHeadSet.put(incomingBlockChainLabel, block);
+            //Nuova Chain Mai vista prima?
+            if(!chainHeadSet.containsKey(incomingBlockLabel)){
+                chainHeadSet.put(incomingBlockLabel,block);
+                updateChain();
+            }
+            //Le chain non vengono eliminate ma ci accorgiamo di un blocco vecchio grazie alla totalBlockHeight
+            if(totalIncomingBlockHeight>chainHeadSet.get(incomingBlockLabel).getTotalHeight()){
+                chainHeadSet.put(incomingBlockLabel, block);
                 updateChain();
             }
         }
@@ -103,9 +106,6 @@ public class SycomoreConsensusAlgorithm extends AbstractDAGBasedConsensus<Sycomo
         //to the same predecessor of a block already present in the DAG.
         //Fork rule: keep the syc-dag for which the confirmation level of the genesis block is the largest.
         //Confirmation level: Longest path that commits the presence of
-        if(!allblocks.contains(block)){
-
-        }
     }
 
 
@@ -118,9 +118,8 @@ public class SycomoreConsensusAlgorithm extends AbstractDAGBasedConsensus<Sycomo
     this.confirmedBlocks = new HashSet<SycomoreBlock>();
     //In this case we have more than one chainHead, and for each chainHead we get all the
         //ancestor to put in the confirmedBlock, which is the current good chain.
-    chainSet.forEach((key,chain)->{
-        SycomoreBlock chainHead = chain.getLeaf();
-        this.confirmedBlocks.addAll(this.localBlockDAG.getAllAncestors(chainHead));
+    chainHeadSet.forEach((key,block)->{
+        this.confirmedBlocks.addAll(this.localBlockDAG.getAllAncestors(block));
     });
     k_confirmed_block_events();
     }
@@ -144,7 +143,7 @@ public class SycomoreConsensusAlgorithm extends AbstractDAGBasedConsensus<Sycomo
         int confirmedHeight =  maxTotalHeight-CONFIRMATION_DEPTH;
         HashSet<SycomoreBlock> blockToConfirm = new HashSet<>();
         chainHeadSet.forEach((key, block)->{
-            blockToConfirm.addAll(localBlockDAG.getAncestorsWithHeight(,confirmedHeight));
+            blockToConfirm.addAll(localBlockDAG.getAncestorsWithHeight(block,confirmedHeight));
         });
 
 

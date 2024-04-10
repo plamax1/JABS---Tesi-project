@@ -32,7 +32,7 @@ public class EthereumProofOfWorkGlobalNetworkStats6Regions extends EthereumNodeG
             15, 14, 14, 11, 11, 10, 9, 8, 6, 6, 4, 4, 4, 3, 3, 3, 2, 2, 2, 2, 1
     };
 
-    public static final int ETHEREUM_NUM_MINERS_2022 = 35;
+    public static final int ETHEREUM_NUM_MINERS_2022 = 1;
 
 
     @Override
