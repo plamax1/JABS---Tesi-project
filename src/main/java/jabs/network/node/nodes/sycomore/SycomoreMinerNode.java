@@ -17,6 +17,7 @@ import jabs.network.node.nodes.Node;
 import jabs.network.node.nodes.ethereum.EthereumNode;
 import jabs.simulator.Simulator;
 import jabs.simulator.event.BlockMiningProcess;
+import jabs.simulator.event.TxGenerationProcessSingleNode;
 import jabs.simulator.randengine.RandomnessEngine;
 
 
@@ -35,6 +36,7 @@ public class SycomoreMinerNode extends SycomoreNode implements MinerNode {
     static final long MAXIMUM_BLOCK_GAS = 12500000;
     private final int MAX_UNBALANCE = 5;
     Random rand = new Random();
+    private TxGenerationProcessSingleNode txGenerationProcessSingleNode;
 
     Set<SycomoreTx> blockTxs = new HashSet<>();
 
@@ -47,7 +49,10 @@ public class SycomoreMinerNode extends SycomoreNode implements MinerNode {
         this.hashPower = hashPower;
         blockTxs = new HashSet<>();
         System.err.println("Hi, this is sycomore node: " + this.toString());
-
+        txGenerationProcessSingleNode = new TxGenerationProcessSingleNode(this.getSimulator(), randomnessEngine, this,1);
+        txGenerationProcessSingleNode.generate();
+        txGenerationProcessSingleNode.generate();
+        txGenerationProcessSingleNode.generate();
     }
 
     public SycomoreMinerNode(Simulator simulator, Network network, int nodeID, long downloadBandwidth,
@@ -70,6 +75,11 @@ public class SycomoreMinerNode extends SycomoreNode implements MinerNode {
         //We'll never meet the condition to remove "ε"
         //What do we do:
         //1 - Find all the leaves of the chain
+
+        generateTransactionSet();
+
+        System.err.println("In the mempool there are: "+ memPool.size() + " transactions" );
+
         BlockHeader header = new BlockHeader();
         int height;
         int newBlockChainLabel;
@@ -117,12 +127,15 @@ public class SycomoreMinerNode extends SycomoreNode implements MinerNode {
             this.blockTxs = new HashSet<>();
             totalGas = 0;
             for (SycomoreTx sycomoreTx:memPool) { //for each transaction in the mempool
+                //System.err.println("ADDING TRANSACTION");
                 if ((totalGas + sycomoreTx.getGas()) > MAXIMUM_BLOCK_GAS) {
                     break;
                 }
                 blockTxs.add(sycomoreTx);
                 totalGas += sycomoreTx.getGas();
             }
+            System.err.println("In the block there are: "+ blockTxs.size() + " transactions" );
+
             newSycoBlockWithTX = new SycomoreBlockWithTx(new BlockHeader(),newBlockLabel,newBlockHeightInChain,newBlockTotalHeight,simulator.getSimulationTime(),this, newBlockParents,null, blockTxs,0,0);
             spreadBlock(newSycoBlockWithTX);
 
@@ -177,7 +190,9 @@ public class SycomoreMinerNode extends SycomoreNode implements MinerNode {
                     blockTxs.add(sycomoreTx);
                     totalGas += sycomoreTx.getGas();
                 }
-                SycomoreBlockWithTx newSycoBlockWithTX = new SycomoreBlockWithTx(new BlockHeader(),newBlockLabel,newBlockHeightInChain,newBlockTotalHeight,simulator.getSimulationTime(),this, newBlockParents,null, blockTxs,0,0);
+
+            System.err.println("456In the block there are: "+ blockTxs.size() + " transactions" );
+            SycomoreBlockWithTx newSycoBlockWithTX = new SycomoreBlockWithTx(new BlockHeader(),newBlockLabel,newBlockHeightInChain,newBlockTotalHeight,simulator.getSimulationTime(),this, newBlockParents,null, blockTxs,0,0);
                 spreadBlock(newSycoBlockWithTX);
             }
 
@@ -186,6 +201,23 @@ public class SycomoreMinerNode extends SycomoreNode implements MinerNode {
 
 
     }
+
+    private void generateTransactionSet() {
+        //int scaleFactor = 1;
+        //We use this method only to speed up simulation:
+        //What we should would be generate transaction by the TxGenerationProcess, but it
+        //this case the simulation would take an infinite time.
+        //Since out aim is to understand how the protocol behaves in a specific load situation,
+        //we can simply fill memPool this way.
+        //int[] load_array=SycomoreNodeUtils.populateArray()*scaleFactor;
+        //int[] load_array=SycomoreNodeUtils.populateArray();
+        //HashMap<Integer,Integer> map = SycomoreNodeUtils.arrayToMap(load_array);
+        //while(this.getSimulator().getSimulationTime()<map.ge)
+        for (int i = 1; i <= 1000; i++) {
+            memPool.add((SycomoreTx) new SycomoreTx(3000, 22000));
+        }
+    }
+
     /**
      *
      */
@@ -196,6 +228,8 @@ public class SycomoreMinerNode extends SycomoreNode implements MinerNode {
         BlockMiningProcess blockMiningProcess = new BlockMiningProcess(this.simulator, this.network.getRandom(),
                 4, this);
         this.miningProcess = this.simulator.putEvent(blockMiningProcess, blockMiningProcess.timeToNextGeneration());
+
+
     }
 
     /**
@@ -229,12 +263,28 @@ public class SycomoreMinerNode extends SycomoreNode implements MinerNode {
     }
 
     private SycomoreBlock find_brother(SycomoreBlock mergeable_block){
-        return this.localBlockTree.getAllBlocks().stream().filter(block ->((block.getLabel().length()==mergeable_block.getLabel().length()) && SycomoreBlockUtils.binaryDistance(mergeable_block.getLabel(),block.getLabel())==1) && (mergeable_block.getTotalHeight()==block.getTotalHeight())).toList().get(0);
+
+        Set<SycomoreBlock> blocks = this.localBlockTree.getAllBlocks();
+        List<SycomoreBlock> filteredBlocks = new ArrayList<>();
+
+        for (SycomoreBlock block : blocks) {
+            if (block.getLabel().length() == mergeable_block.getLabel().length() &&
+                    SycomoreBlockUtils.binaryDistance(mergeable_block.getLabel(), block.getLabel()) == 1 &&
+                    mergeable_block.getTotalHeight() == block.getTotalHeight()) {
+                filteredBlocks.add(block);
+            }
+        }
+        if (!filteredBlocks.isEmpty())
+            return filteredBlocks.get(0);
+        return null;
+        //return this.localBlockTree.getAllBlocks().stream().filter(block ->((block.getLabel().length()==mergeable_block.getLabel().length()) && SycomoreBlockUtils.binaryDistance(mergeable_block.getLabel(),block.getLabel())==1) && (mergeable_block.getTotalHeight()==block.getTotalHeight())).toList().get(0);
 
     }
 
     @Override
     protected void processNewTx(SycomoreTx sycomoreTx, Node from) {
+        System.err.println("123 Process new transaction syco called");
+
         // add to memPool
         memPool.add((SycomoreTx) sycomoreTx);
 

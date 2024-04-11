@@ -10,6 +10,7 @@ import jabs.network.node.nodes.sycomore.SycomoreMinerNode;
 import jabs.network.node.nodes.sycomore.SycomoreNode;
 import jabs.network.stats.ProofOfWorkGlobalNetworkStats;
 import jabs.simulator.Simulator;
+import jabs.simulator.event.TxGenerationProcessRandomNetworkNode;
 import jabs.simulator.randengine.RandomnessEngine;
 
 import java.util.HashSet;
@@ -20,6 +21,8 @@ public class SycomoreGlobalProofOfWorkNetwork<R extends Enum<R>> extends //Sycom
     public SycomoreGlobalProofOfWorkNetwork(RandomnessEngine randomnessEngine,
                                       ProofOfWorkGlobalNetworkStats<R> networkStats) {
         super(randomnessEngine, networkStats);
+        //System.err.println("NETWORK CONSTRUCTOR NODES SIZE: " + String.valueOf(this.nodes.size()));
+        //TxGenerationProcessRandomNetworkNode txGenerationProcessRandomNetworkNode = new TxGenerationProcessRandomNetworkNode(this.getRandomNode().getSimulator(), this, new RandomnessEngine(94656456), 1);
     }
 
     /**

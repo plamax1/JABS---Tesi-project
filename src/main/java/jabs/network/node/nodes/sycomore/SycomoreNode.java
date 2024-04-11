@@ -46,6 +46,8 @@ public class SycomoreNode extends PeerDLTNode<SycomoreBlock, SycomoreTx> {
 
     @Override
     protected void processNewTx(SycomoreTx sycomoreTx, Node from) {
+        System.err.println("4321 Transaction received");
+
         this.broadcastTransaction(sycomoreTx, from);
     }
 
@@ -76,6 +78,7 @@ public class SycomoreNode extends PeerDLTNode<SycomoreBlock, SycomoreTx> {
 
     @Override
     public void generateNewTransaction() {
+        System.err.println("1234 Generate new transaction syco called");
         //This is to generate new transactions.
         broadcastTransaction(TransactionFactory.sampleSycomoreTransaction(network.getRandom()));
     }

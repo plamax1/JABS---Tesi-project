@@ -26,6 +26,7 @@ public abstract class Network<N extends Node, NodeType extends Enum<NodeType>> {
     }
 
     public N getRandomNode() {
+        System.err.println("NODES SIZE: " + String.valueOf(nodes.size()));
         return nodes.get(randomnessEngine.sampleInt(nodes.size()));
     } //get a random node
 //So the network has a set of nodes, and we get a random node

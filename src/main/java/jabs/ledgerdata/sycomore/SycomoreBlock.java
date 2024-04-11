@@ -9,10 +9,7 @@ import jabs.network.node.nodes.ethereum.EthereumMinerNode;
 import jabs.network.node.nodes.sycomore.BlockHeader;
 import jabs.network.node.nodes.sycomore.SycomoreMinerNode;
 
-import java.util.HashSet;
-import java.util.LinkedList;
-import java.util.List;
-import java.util.Set;
+import java.util.*;
 
 import static jabs.ledgerdata.BlockFactory.ETHEREUM_BLOCK_HASH_SIZE;
 
@@ -101,8 +98,11 @@ public class SycomoreBlock extends Block<SycomoreBlock> implements ProofOfWorkBl
     }
 
     public boolean isSplittable (){
-        if(chainlength()<C_MIN)
+        if(chainlength()<C_MIN){
+            System.err.println("Chain Length: " + String.valueOf(chainlength()));
             return false;
+        }
+        System.err.println("Block load: "+ String.valueOf(cmp_spl_mrg()));
         return cmp_spl_mrg()>SPLIT_THRESHOLD;
     }
 

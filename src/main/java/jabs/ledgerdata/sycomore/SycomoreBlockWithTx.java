@@ -30,7 +30,7 @@ public class SycomoreBlockWithTx extends SycomoreBlock implements BlockWithTx<Sy
             totalSize += tx.getSize();
         }
 
-        //this.size = totalSize + (uncles.size() * ETHEREUM_BLOCK_HASH_SIZE);
+        this.size = totalSize; //+ (uncles.size() * ETHEREUM_BLOCK_HASH_SIZE);
         //We update the size after the call of super
 
         long totalGasTemp = 0;
