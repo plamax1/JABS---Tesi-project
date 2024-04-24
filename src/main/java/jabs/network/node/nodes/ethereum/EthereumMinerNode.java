@@ -1,6 +1,8 @@
 package jabs.network.node.nodes.ethereum;
 
 import jabs.consensus.algorithm.AbstractChainBasedConsensus;
+import jabs.consensus.algorithm.ConsensusAlgorithm;
+import jabs.consensus.algorithm.GhostProtocol;
 import jabs.consensus.config.GhostProtocolConfig;
 import jabs.ledgerdata.ethereum.EthereumBlock;
 import jabs.ledgerdata.ethereum.EthereumBlockWithTx;
@@ -28,6 +30,7 @@ public class EthereumMinerNode extends EthereumNode implements MinerNode {
     protected Simulator.ScheduledEvent miningProcess;
     static final long MAXIMUM_BLOCK_GAS = 12500000;
     private int currentNumUncles;
+    private BlockMiningProcess blockMiningProcess;
 
     public EthereumMinerNode(Simulator simulator, Network network, int nodeID,
                              long downloadBandwidth, long uploadBandwidth, double hashPower, EthereumBlock genesisBlock,
@@ -40,14 +43,21 @@ public class EthereumMinerNode extends EthereumNode implements MinerNode {
     public EthereumMinerNode(Simulator simulator, Network network, int nodeID, long downloadBandwidth,
                              long uploadBandwidth, double hashPower,
                              AbstractChainBasedConsensus<EthereumBlock, EthereumTx> consensusAlgorithm) {
-        super(simulator, network, nodeID, downloadBandwidth, uploadBandwidth, consensusAlgorithm);
+        super(simulator, network, nodeID, downloadBandwidth, uploadBandwidth, (GhostProtocol) consensusAlgorithm);
         this.hashPower = hashPower;
         currentNumUncles=0;
 
     }
+    boolean done_flag = false;
 
     public void generateNewBlock() {//qui noi generiamo un nuovo blocco
         EthereumBlock canonicalChainHead = this.consensusAlgorithm.getCanonicalChainHead();
+        Simulator simulator = this.getSimulator();
+        if(simulator.getSimulationTime()>1800 && !done_flag){
+            System.err.println("Time: "+simulator.getSimulationTime());
+            blockMiningProcess.averageTimeBetweenGenerations=6;
+            done_flag=true;
+        }
 
         Set<EthereumBlock> tipBlocks = this.localBlockTree.getChildlessBlocks();
         tipBlocks.remove(canonicalChainHead);
@@ -80,7 +90,7 @@ public class EthereumMinerNode extends EthereumNode implements MinerNode {
      */
     @Override
     public void startMining() { //il mining del singolo node
-        BlockMiningProcess blockMiningProcess = new BlockMiningProcess(this.simulator, this.network.getRandom(),
+        blockMiningProcess  = new BlockMiningProcess(this.simulator, this.network.getRandom(),
                 this.consensusAlgorithm.getCanonicalChainHead().getDifficulty()/((double) this.hashPower), this);
         this.miningProcess = this.simulator.putEvent(blockMiningProcess, blockMiningProcess.timeToNextGeneration());
     }
@@ -112,6 +122,7 @@ public class EthereumMinerNode extends EthereumNode implements MinerNode {
         //nodo processa un blocck in arrivo
 
         alreadyUncledBlocks.addAll(ethereumBlock.getUncles());
+
 
         // remove from memPool
         if (ethereumBlock instanceof EthereumBlockWithTx) {//when a new block arrives remove the

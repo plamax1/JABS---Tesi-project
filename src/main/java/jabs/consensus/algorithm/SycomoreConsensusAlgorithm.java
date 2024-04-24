@@ -13,7 +13,7 @@ import jabs.ledgerdata.sycomore.SycomoreTx;
 import jabs.network.node.nodes.sycomore.BlockHeaderEntry;
 import jabs.simulator.Simulator;
 import jabs.simulator.event.K_ConfirmationBlockEvent;
-
+import jabs.simulator.event.NewForkEvent;
 import java.util.*;
 
 public class SycomoreConsensusAlgorithm extends AbstractDAGBasedConsensus<SycomoreBlock, SycomoreTx>
@@ -21,9 +21,9 @@ public class SycomoreConsensusAlgorithm extends AbstractDAGBasedConsensus<Sycomo
    //private final HashMap<, Integer> totalWeights = new HashMap<>();
     public static int DEFAULT_GHOST_WEIGHT = 1;
     protected SycomoreBlock originOfGhost;
-    private final double averageBlockMiningInterval;
+    private double averageBlockMiningInterval;
 
-    private final int CONFIRMATION_DEPTH = 6;
+    private final int CONFIRMATION_DEPTH = 0;
 
     //LocalBlockDAG<SycomoreBlock> localBlockTree;
     Set<SycomoreBlock> orphanSet;
@@ -31,6 +31,8 @@ public class SycomoreConsensusAlgorithm extends AbstractDAGBasedConsensus<Sycomo
     //With Sycomore we have more than one chain, and each chain has a different label
     // but for each chain we need to keep the head for each chain.
     private Map<String, SycomoreBlock> chainHeadSet;
+
+    private HashSet<SycomoreBlock> already_K_confirmed_blocks;
 
 
     public SycomoreConsensusAlgorithm(LocalBlockDAG<SycomoreBlock> localBlockDAG, SycomoreProtocolConfig sycomoreProtocolConfig) {
@@ -41,7 +43,8 @@ public class SycomoreConsensusAlgorithm extends AbstractDAGBasedConsensus<Sycomo
         this.averageBlockMiningInterval = sycomoreProtocolConfig.averageBlockMiningInterval();
         chainHeadSet.put("ε", localBlockDAG.getGenesisBlock());
         //Ok, so we have created the chainSet and added the first block
-        System.err.println("Chain Head Set " + chainHeadSet.toString());
+        //System.err.println("Chain Head Set " + chainHeadSet.toString());
+        already_K_confirmed_blocks = new HashSet<SycomoreBlock>();
     }
 
     @Override
@@ -59,31 +62,39 @@ public class SycomoreConsensusAlgorithm extends AbstractDAGBasedConsensus<Sycomo
         SycomoreBlock winnerBlock;
 
         //check if this block is already present in the chain...
-        for (SycomoreBlock blockEntry: allblocks){
-            if(totalIncomingBlockHeight == blockEntry.getTotalHeight() &&
+        Set<SycomoreBlock> allConfirmedBlocks = this.confirmedBlocks;
+
+        for (SycomoreBlock blockEntry: allConfirmedBlocks) {
+            if (totalIncomingBlockHeight == blockEntry.getTotalHeight() &&
                     incomingBlockLabel.equals(blockEntry.getLabel())
-                    && blockEntry.getParents().equals(block.getParents())){
+                    && blockEntry.getParents().equals(block.getParents()) && !localBlockDAG.contains(block)){
+
                 fork_flag = true;
+                System.err.println("999 NEW FORK");
+
+                Simulator simulator = this.peerDLTNode.getSimulator();
+                double currentTime = simulator.getSimulationTime();
+                simulator.putEvent(new NewForkEvent(currentTime, this.peerDLTNode), 0);
+                System.err.println("FORK: " + String.valueOf(currentTime) + " node: " + String.valueOf(this.peerDLTNode.nodeID));
                 //We have to find which between the two blocks has the highest
                 //confirmation level
 
                 //TODO Does getAllSuccessors work well?
                 HashSet<SycomoreBlock> EntrySuccessors = this.localBlockDAG.getAllSuccessors(blockEntry);
                 HashSet<SycomoreBlock> IncomingBlockSuccessors = this.localBlockDAG.getAllSuccessors(block);
-                if(findMaxHeight(EntrySuccessors)>findMaxHeight(IncomingBlockSuccessors))
-                    winnerBlock=blockEntry;
+                if (findMaxHeight(EntrySuccessors) > findMaxHeight(IncomingBlockSuccessors))
+                    winnerBlock = blockEntry;
                 else
-                    winnerBlock=block;
+                    winnerBlock = block;
                 chainHeadSet.put(winnerBlock.getLabel(), winnerBlock);
 
                 updateChain(); //Dobbiamo aggiornare la situazione dei blocchi confermati
-
             }
             //In the case we don't have forks
             //We simpy add the block to the chain
             //TODO
-
         }
+
         if(!fork_flag){
             //se non si tratta di un fork, ma di un nuovo blocco.
             //Nuova Chain Mai vista prima?
@@ -94,6 +105,7 @@ public class SycomoreConsensusAlgorithm extends AbstractDAGBasedConsensus<Sycomo
             //Le chain non vengono eliminate ma ci accorgiamo di un blocco vecchio grazie alla totalBlockHeight
             if(totalIncomingBlockHeight>chainHeadSet.get(incomingBlockLabel).getTotalHeight()){
                 chainHeadSet.put(incomingBlockLabel, block);
+
                 updateChain();
             }
         }
@@ -126,8 +138,8 @@ public class SycomoreConsensusAlgorithm extends AbstractDAGBasedConsensus<Sycomo
 
 
     private void k_confirmed_block_events() {
-            //Find the leaf with the maxHeight
-        int maxTotalHeight = Integer.MIN_VALUE;
+
+        /*int maxTotalHeight = Integer.MIN_VALUE;
 
         // Iterate over the values of the map
         for (SycomoreBlock block : chainHeadSet.values()) {
@@ -138,20 +150,28 @@ public class SycomoreConsensusAlgorithm extends AbstractDAGBasedConsensus<Sycomo
             if (totalHeight > maxTotalHeight) {
                 maxTotalHeight = totalHeight;
             }
-        }
+        }*/
+        //Problem if the maxtotal height of the chain has not increased, blocks are confirmed again
+        //int confirmedHeight =  maxTotalHeight-CONFIRMATION_DEPTH;
 
-        int confirmedHeight =  maxTotalHeight-CONFIRMATION_DEPTH;
+
+        ///DEF: for all keys in chainHeadSet, we have to confirm all the blocks which have an height of
+        //at least chainHeadSet.get(key).getTotalHeight()-CONFIRMATION_DEPTH
         HashSet<SycomoreBlock> blockToConfirm = new HashSet<>();
         chainHeadSet.forEach((key, block)->{
-            blockToConfirm.addAll(localBlockDAG.getAncestorsWithHeight(block,confirmedHeight));
+            blockToConfirm.addAll(getBlocksWithHeight(block, block.getTotalHeight()-CONFIRMATION_DEPTH));
         });
-
-
+        //System.err.println("444Block to confirm: " + blockToConfirm.size());
+        chainHeadSet.forEach((key, block)->{
+           //System.err.println("Chain: " + key + " Height: " + block.getTotalHeight());
+        });
         blockToConfirm.forEach((block)-> {
-            Simulator simulator = this.peerDLTNode.getSimulator();
-            double currentTime = simulator.getSimulationTime();
-            simulator.putEvent(new K_ConfirmationBlockEvent(currentTime,this.peerDLTNode, block), 0);
-
+            if(!already_K_confirmed_blocks.contains(block)){
+                Simulator simulator = this.peerDLTNode.getSimulator();
+                double currentTime = simulator.getSimulationTime();
+                simulator.putEvent(new K_ConfirmationBlockEvent(currentTime,this.peerDLTNode, block), 0);
+                already_K_confirmed_blocks.add(block);
+            }
         });
 
              }
@@ -163,5 +183,27 @@ public class SycomoreConsensusAlgorithm extends AbstractDAGBasedConsensus<Sycomo
                         maxHeight = block.getHeight();
                 }
                 return maxHeight;
+            }
+
+            private HashSet<SycomoreBlock> getBlocksWithHeight(SycomoreBlock block, int height){
+                HashSet<SycomoreBlock> blockSet = new HashSet<>();
+                SycomoreBlock currentBlock = block;
+                while(currentBlock!= null && currentBlock.getTotalHeight() > height){
+                    if(!currentBlock.getParents().isEmpty()) {
+                        currentBlock = currentBlock.getParents().get(0);
+                    }
+                    else
+                        break;
+                    //Possible problem, se la chain si divide in 2 che facciamo se ci prendiamo solo get(0)
+                    // dei parents: non dovrebbe essere un pronlrms in quanto i blocchi dell'altra chain
+                    //dovrebbero trovarsi a partire dalle altre mainchainhead.
+                    if(currentBlock.getTotalHeight() == height)
+                        blockSet.add(currentBlock);
+                }
+                return blockSet;
+            }
+            public void setAvgBlockMiningInterval(double avgBlockMiningInterval){
+
+                this.averageBlockMiningInterval=avgBlockMiningInterval;
             }
          }

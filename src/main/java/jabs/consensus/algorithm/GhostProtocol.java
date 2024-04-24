@@ -17,7 +17,7 @@ public class GhostProtocol<B extends SingleParentBlock<B>, T extends Tx<T>>
     public static int DEFAULT_GHOST_WEIGHT = 1;
     private int CONFIRMATION_DEPHT = 6;
     protected B originOfGhost;
-    private final double averageBlockMiningInterval;
+    public double averageBlockMiningInterval;
 
     public GhostProtocol(LocalBlockTree<B> localBlockTree, GhostProtocolConfig ghostProtocolConfig) {
         super(localBlockTree);
@@ -56,7 +56,7 @@ public class GhostProtocol<B extends SingleParentBlock<B>, T extends Tx<T>>
             HashSet<B> children = this.localBlockTree.getChildren(block);
             for (B child: children) {
                 if (localBlockTree.getLocalBlock(child).isConnectedToGenesis) {
-                    if (totalWeights.get(child) > maxWeight) {
+                    if (totalWeights.get(child)!=null && totalWeights.get(child) > maxWeight) {
                         maxWeight = totalWeights.get(child);
                         block = child;
                     }
@@ -89,6 +89,12 @@ public class GhostProtocol<B extends SingleParentBlock<B>, T extends Tx<T>>
         double currentTime = simulator.getSimulationTime();
         simulator.putEvent(new K_ConfirmationBlockEvent(currentTime,this.peerBlockchainNode, block_pending), 0);
     }}
+
+
+
+
         //quindi in pratica il consensus protocol conferma il blocco???
-    }
+
+
+}
 

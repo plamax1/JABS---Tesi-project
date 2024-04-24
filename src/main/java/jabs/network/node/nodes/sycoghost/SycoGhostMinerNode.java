@@ -1,32 +1,25 @@
-package jabs.network.node.nodes.sycomore;
+package jabs.network.node.nodes.sycoghost;
 
-import jabs.consensus.algorithm.AbstractChainBasedConsensus;
 import jabs.consensus.algorithm.AbstractDAGBasedConsensus;
-import jabs.consensus.config.GhostProtocolConfig;
+import jabs.consensus.algorithm.SycoGhostProtocol;
 import jabs.consensus.config.SycomoreProtocolConfig;
-import jabs.ledgerdata.Block;
-import jabs.ledgerdata.ethereum.EthereumBlock;
-import jabs.ledgerdata.ethereum.EthereumBlockWithTx;
-import jabs.ledgerdata.ethereum.EthereumTx;
-import jabs.ledgerdata.sycomore.*;
+import jabs.ledgerdata.sycomore.SycomoreBlock;
+import jabs.ledgerdata.sycomore.SycomoreBlockUtils;
+import jabs.ledgerdata.sycomore.SycomoreBlockWithTx;
+import jabs.ledgerdata.sycomore.SycomoreTx;
 import jabs.network.message.DataMessage;
 import jabs.network.message.Packet;
 import jabs.network.networks.Network;
 import jabs.network.node.nodes.MinerNode;
 import jabs.network.node.nodes.Node;
-import jabs.network.node.nodes.ethereum.EthereumNode;
 import jabs.simulator.Simulator;
 import jabs.simulator.event.BlockMiningProcess;
 import jabs.simulator.event.TxGenerationProcessSingleNode;
 import jabs.simulator.randengine.RandomnessEngine;
 
-
 import java.util.*;
-import java.util.random.RandomGenerator;
 
-import static jabs.ledgerdata.BlockFactory.ETHEREUM_MIN_DIFFICULTY;
-
-public class SycomoreMinerNode extends SycomoreNode implements MinerNode {
+public class SycoGhostMinerNode extends SycoGhostNode implements MinerNode {
     RandomnessEngine randomnessEngine = new RandomnessEngine(new Random().nextInt());
     protected Set<SycomoreTx> memPool = new HashSet<>();
     //mempool, sort of waiting room for transaction still not included in a block
@@ -41,23 +34,21 @@ public class SycomoreMinerNode extends SycomoreNode implements MinerNode {
     Set<SycomoreTx> blockTxs = new HashSet<>();
 
     //anche qui abbiamo 2 costruttori
-    public SycomoreMinerNode(Simulator simulator, Network network, int nodeID,
-                             long downloadBandwidth, long uploadBandwidth, double hashPower, SycomoreBlock genesisBlock,
-                             SycomoreProtocolConfig sycomoreProtocolConfig) {
+    public SycoGhostMinerNode(Simulator simulator, Network network, int nodeID,
+                              long downloadBandwidth, long uploadBandwidth, double hashPower, SycomoreBlock genesisBlock,
+                              SycomoreProtocolConfig sycomoreProtocolConfig) {
         //nel primo prendiamo il genesisblock e la config del protocol
         super(simulator, network, nodeID, downloadBandwidth, uploadBandwidth, genesisBlock, sycomoreProtocolConfig);
         this.hashPower = hashPower;
         blockTxs = new HashSet<>();
         //System.err.println("Hi, this is sycomore node: " + this.toString());
-        txGenerationProcessSingleNode = new TxGenerationProcessSingleNode(this.getSimulator(), randomnessEngine, this,1);
-        txGenerationProcessSingleNode.generate();
-        txGenerationProcessSingleNode.generate();
-        txGenerationProcessSingleNode.generate();
+//      txGenerationProcessSingleNode = new TxGenerationProcessSingleNode(this.getSimulator(), randomnessEngine, this,1);
+
     }
 
-    public SycomoreMinerNode(Simulator simulator, Network network, int nodeID, long downloadBandwidth,
-                             long uploadBandwidth, double hashPower,
-                             AbstractDAGBasedConsensus<SycomoreBlock, SycomoreTx> consensusAlgorithm) {
+    public SycoGhostMinerNode(Simulator simulator, Network network, int nodeID, long downloadBandwidth,
+                              long uploadBandwidth, double hashPower,
+                              AbstractDAGBasedConsensus<SycomoreBlock, SycomoreTx> consensusAlgorithm) {
         //nel secondo prendiamo abstractchainbasedconsensus
         super(simulator, network, nodeID, downloadBandwidth, uploadBandwidth, consensusAlgorithm);
         this.hashPower = hashPower;
@@ -81,15 +72,12 @@ public class SycomoreMinerNode extends SycomoreNode implements MinerNode {
         //System.err.println("In the mempool there are: "+ memPool.size() + " transactions" );
 
         BlockHeader header = new BlockHeader();
-        int height;
         int newBlockChainLabel;
         int newBlockTotalHeight;
         int newBlockHeightInChain;
         String newBlockLabel;
 
         Set<SycomoreBlock> leafBlocks = this.localBlockTree.getChildlessBlocks();
-
-        //System.err.println("leaf Blocks: " + leafBlocks.toString());
 
         List<SycomoreBlock> usableLeaves = usableLeaves(leafBlocks);
         //Since this is a simulation, we extract at random the predecessor
@@ -244,18 +232,49 @@ public class SycomoreMinerNode extends SycomoreNode implements MinerNode {
     private  List<SycomoreBlock> usableLeaves ( Set<SycomoreBlock> leafBlocks) {
         //Since we want to avoid the growth of just one chain...
         //the sycomore protocol allows to append new blocks only on chains which are not
-        //so long
-        LinkedList<SycomoreBlock> usableLeaves = new LinkedList<SycomoreBlock>();
-        int minChainHeight = Integer.MAX_VALUE;
-        for (SycomoreBlock leaf : leafBlocks){
-            if(leaf.getHeight()<minChainHeight)
-                minChainHeight = leaf.getHeight();
+        //so long and we have also to discard uncles
+
+        // Create a map to store the maximum weight block for each label,
+        //because this is the main chain for each label
+        Map<String, SycomoreBlock> maxWeightBlocksByLabel = new HashMap<>();
+
+        // Iterate through each block
+        for (SycomoreBlock block : leafBlocks) {
+            String label = block.getLabel();
+            SycoGhostProtocol consensusAlgorithm = (SycoGhostProtocol) this.getConsensusAlgorithm();
+            double curr_block_weight = consensusAlgorithm.getWeight(block);
+            // Check if this label already exists in the map
+            if (maxWeightBlocksByLabel.containsKey(label)) {
+                // If the current block has higher weight, update the map
+                if (curr_block_weight > consensusAlgorithm.getWeight(maxWeightBlocksByLabel.get(label))) {
+                    maxWeightBlocksByLabel.put(label, block);
+                }
+            } else {
+                // If this label doesn't exist in the map, add it
+                maxWeightBlocksByLabel.put(label, block);
+            }
         }
 
-        for (SycomoreBlock leaf : leafBlocks){
-            if(leaf.getHeight()<minChainHeight+5)
-                usableLeaves.add(leaf);
+        // Now maxWeightBlocksByLabel contains the block with maximum weight for each label,
+        //now we just need to discard the label we cannot append a new block to because of the
+        //length of the chain
+
+        LinkedList<SycomoreBlock> usableLeaves = new LinkedList<SycomoreBlock>();
+
+        // You can iterate over the map to access the results
+        int minChainHeight = Integer.MAX_VALUE;
+
+        for (Map.Entry<String, SycomoreBlock> entry : maxWeightBlocksByLabel.entrySet()) {
+            if(entry.getValue().getTotalHeight()<minChainHeight)
+                minChainHeight = entry.getValue().getTotalHeight();
         }
+
+        for (Map.Entry<String, SycomoreBlock> entry : maxWeightBlocksByLabel.entrySet()) {
+            if(entry.getValue().getTotalHeight()<minChainHeight+5)
+                usableLeaves.add(entry.getValue());
+
+        }
+
 
         return usableLeaves;
     }

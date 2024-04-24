@@ -65,4 +65,9 @@ public abstract class AbstractChainBasedConsensus<B extends SingleParentBlock<B>
     }
 
     abstract protected void updateChain();
+
+    //public void setAvgBlockMiningInterval(double avgBlockMiningInterval){}
+
+
+
 }

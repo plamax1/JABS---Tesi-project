@@ -47,7 +47,7 @@ public class EthereumProofOfWorkGlobalNetworkStats86Countries extends EthereumNo
             15, 14, 14, 11, 11, 10, 9, 8, 6, 6, 4, 4, 4, 3, 3, 3, 2, 2, 2, 2, 1
     };
 
-    public static final int ETHEREUM_NUM_MINERS_2022 = 10;
+    public static final int ETHEREUM_NUM_MINERS_2022 = 1;
 
     public static final long ETHEREUM_DIFFICULTY_2022 = 2097;
 

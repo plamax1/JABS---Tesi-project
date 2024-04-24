@@ -133,11 +133,11 @@ public class GlobalNetworkStats6Region implements NetworkStats<SixRegions> {
 
     @Override
     public long sampleDownloadBandwidth(SixRegions region) {
-        return sampleBandwidthByRegion(region, DOWNLOAD_BANDWIDTH_DISTRIBUTION, DOWNLOAD_BANDWIDTH_BIN);
+        return (long) (sampleBandwidthByRegion(region, DOWNLOAD_BANDWIDTH_DISTRIBUTION, DOWNLOAD_BANDWIDTH_BIN));
     }
 
     @Override
     public long sampleUploadBandwidth(SixRegions region) {
-        return sampleBandwidthByRegion(region, UPLOAD_BANDWIDTH_DISTRIBUTION, UPLOAD_BANDWIDTH_BIN);
+        return (long) (sampleBandwidthByRegion(region, UPLOAD_BANDWIDTH_DISTRIBUTION, UPLOAD_BANDWIDTH_BIN));
     }
 }

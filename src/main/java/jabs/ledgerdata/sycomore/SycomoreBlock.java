@@ -68,17 +68,14 @@ public class SycomoreBlock extends Block<SycomoreBlock> implements ProofOfWorkBl
         if(this.getParents()!=null){
         //how do we compute the load of a block?
         //dobbiamo esaminare i blocchi da b_c (current block) a b_c-c_min+1
-        int i = this.getHeight(); //this is bc
+        int i = this.getTotalHeight(); //this is bc
         int tmp_sum = 0;
         SycomoreBlock cur_block = this;
         while(i >= (i-C_MIN+1)){
             tmp_sum+=cur_block.getLoad();
-            if(!this.getParents().isEmpty()){
-            cur_block = this.getParents().get(0);} //We don't need to ensure that we reached the end of the chain
+            cur_block = this.getParents().get(0);
+            //We don't need to ensure that we reached the end of the chain
             //because the chain if of course longer than cmin
-            else{
-                break;
-            }
             i++;}
         return (double) tmp_sum / C_MIN;}
         else
@@ -88,9 +85,10 @@ public class SycomoreBlock extends Block<SycomoreBlock> implements ProofOfWorkBl
     ////////////COMPUTE HASH PROBABLY SHOULD NOT STAY HERE
 
     private int chainlength (){
+        String chainLabel = this.getLabel();
         int length = 1;
         SycomoreBlock curBlock = this;
-        while (curBlock.getParents().size()==1 && curBlock.getParents()!=null){
+        while (!curBlock.getParents().isEmpty() && curBlock.getParents().get(0).getLabel().equals(chainLabel)){
             curBlock= curBlock.getParents().get(0);
             length++;
         }
@@ -99,16 +97,17 @@ public class SycomoreBlock extends Block<SycomoreBlock> implements ProofOfWorkBl
 
     public boolean isSplittable (){
         if(chainlength()<C_MIN){
-            System.err.println("Chain Length: " + String.valueOf(chainlength()));
+            //System.err.println("Chain Length: " + String.valueOf(chainlength()));
             return false;
         }
-        System.err.println("Block load: "+ String.valueOf(cmp_spl_mrg()));
+        //System.err.println("Value of total Load: "+ String.valueOf(cmp_spl_mrg()));
         return cmp_spl_mrg()>SPLIT_THRESHOLD;
     }
 
     public boolean isMergeable(){
         if(chainlength()<C_MIN)
             return false;
+        //System.err.println("Value of total Load: "+ String.valueOf(cmp_spl_mrg()));
         return cmp_spl_mrg()>MERGE_THRESHOLD;
 
     }

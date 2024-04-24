@@ -26,7 +26,8 @@ public class EthereumNodeGlobalNetworkStats86Countries extends GlobalNetworkStat
             0.0010155721056195, 0.00152335815842925
     };
 
-    public static final int ETHEREUM_NUM_NODES_2022 = 5906;
+    //public static final int ETHEREUM_NUM_NODES_2022 = 5906;
+    public static final int ETHEREUM_NUM_NODES_2022 = 1;
 
     public EthereumNodeGlobalNetworkStats86Countries(RandomnessEngine randomnessEngine) {
         super(randomnessEngine);

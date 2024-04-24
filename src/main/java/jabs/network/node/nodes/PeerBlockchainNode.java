@@ -14,7 +14,7 @@ import java.util.SortedSet;
 import java.util.TreeSet;
 //PeerBlockchainNode, this could be any node, just a blockchain node
 public abstract class PeerBlockchainNode<B extends SingleParentBlock<B>, T extends Tx<T>> extends PeerDLTNode<B, T> {
-    protected final AbstractChainBasedConsensus<B, T> consensusAlgorithm;
+    protected AbstractChainBasedConsensus<B, T> consensusAlgorithm;
 
     protected final HashMap<Hash, T> alreadySeenTxs = new HashMap<>();
     protected final HashMap<Hash, B> alreadySeenBlocks = new HashMap<>();
