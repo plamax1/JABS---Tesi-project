@@ -2,10 +2,10 @@ package jabs.network.node.nodes.sycoghost;
 
 import java.util.ArrayList;
 
-public class BlockHeader {
+public class SGBlockHeader {
     private final ArrayList<BlockHeaderEntry> headers;
 
-    public BlockHeader() {
+    public SGBlockHeader() {
         this.headers = new ArrayList<>();
     }
 

@@ -2,7 +2,11 @@ package jabs.network.node.nodes.sycoghost;
 
 import jabs.consensus.algorithm.AbstractDAGBasedConsensus;
 import jabs.consensus.algorithm.SycoGhostProtocol;
+import jabs.consensus.config.SycoGhostProtocolConfig;
 import jabs.consensus.config.SycomoreProtocolConfig;
+import jabs.ledgerdata.sycoghost.SycoGhostBlock;
+import jabs.ledgerdata.sycoghost.SycoGhostBlockWithTx;
+import jabs.ledgerdata.sycoghost.SycoGhostTx;
 import jabs.ledgerdata.sycomore.SycomoreBlock;
 import jabs.ledgerdata.sycomore.SycomoreBlockUtils;
 import jabs.ledgerdata.sycomore.SycomoreBlockWithTx;
@@ -21,9 +25,9 @@ import java.util.*;
 
 public class SycoGhostMinerNode extends SycoGhostNode implements MinerNode {
     RandomnessEngine randomnessEngine = new RandomnessEngine(new Random().nextInt());
-    protected Set<SycomoreTx> memPool = new HashSet<>();
+    protected Set<SycoGhostTx> memPool = new HashSet<>();
     //mempool, sort of waiting room for transaction still not included in a block
-    protected Set<SycomoreBlock> alreadyUncledBlocks = new HashSet<>();
+    protected Set<SycoGhostBlock> alreadyUncledBlocks = new HashSet<>();
     protected final double hashPower;
     protected Simulator.ScheduledEvent miningProcess;
     static final long MAXIMUM_BLOCK_GAS = 12500000;
@@ -31,12 +35,12 @@ public class SycoGhostMinerNode extends SycoGhostNode implements MinerNode {
     Random rand = new Random();
     private TxGenerationProcessSingleNode txGenerationProcessSingleNode;
 
-    Set<SycomoreTx> blockTxs = new HashSet<>();
+    Set<SycoGhostTx> blockTxs = new HashSet<>();
 
     //anche qui abbiamo 2 costruttori
     public SycoGhostMinerNode(Simulator simulator, Network network, int nodeID,
-                              long downloadBandwidth, long uploadBandwidth, double hashPower, SycomoreBlock genesisBlock,
-                              SycomoreProtocolConfig sycomoreProtocolConfig) {
+                              long downloadBandwidth, long uploadBandwidth, double hashPower, SycoGhostBlock genesisBlock,
+                              SycoGhostProtocolConfig sycomoreProtocolConfig) {
         //nel primo prendiamo il genesisblock e la config del protocol
         super(simulator, network, nodeID, downloadBandwidth, uploadBandwidth, genesisBlock, sycomoreProtocolConfig);
         this.hashPower = hashPower;
@@ -48,7 +52,7 @@ public class SycoGhostMinerNode extends SycoGhostNode implements MinerNode {
 
     public SycoGhostMinerNode(Simulator simulator, Network network, int nodeID, long downloadBandwidth,
                               long uploadBandwidth, double hashPower,
-                              AbstractDAGBasedConsensus<SycomoreBlock, SycomoreTx> consensusAlgorithm) {
+                              AbstractDAGBasedConsensus<SycoGhostBlock, SycoGhostTx> consensusAlgorithm) {
         //nel secondo prendiamo abstractchainbasedconsensus
         super(simulator, network, nodeID, downloadBandwidth, uploadBandwidth, consensusAlgorithm);
         this.hashPower = hashPower;
@@ -71,19 +75,19 @@ public class SycoGhostMinerNode extends SycoGhostNode implements MinerNode {
 
         //System.err.println("In the mempool there are: "+ memPool.size() + " transactions" );
 
-        BlockHeader header = new BlockHeader();
+        SGBlockHeader header = new SGBlockHeader();
         int newBlockChainLabel;
         int newBlockTotalHeight;
         int newBlockHeightInChain;
         String newBlockLabel;
 
-        Set<SycomoreBlock> leafBlocks = this.localBlockTree.getChildlessBlocks();
+        Set<SycoGhostBlock> leafBlocks = this.localBlockTree.getChildlessBlocks();
 
-        List<SycomoreBlock> usableLeaves = usableLeaves(leafBlocks);
+        List<SycoGhostBlock> usableLeaves = usableLeaves(leafBlocks);
         //Since this is a simulation, we extract at random the predecessor
         //System.err.println("Usable leaves: "+ String.valueOf(usableLeaves.size()));
-        SycomoreBlock parentBlock = usableLeaves.get(rand.nextInt(usableLeaves.size()));
-        LinkedList<SycomoreBlock> newBlockParents = new LinkedList<SycomoreBlock>();
+        SycoGhostBlock parentBlock = usableLeaves.get(rand.nextInt(usableLeaves.size()));
+        LinkedList<SycoGhostBlock> newBlockParents = new LinkedList<SycoGhostBlock>();
         if(parentBlock.isSplittable()){
             //System.err.println("BLOCK SPLITTABLE ");
             //The block is splittable, so we can produce 2 child blocks:
@@ -96,14 +100,14 @@ public class SycoGhostMinerNode extends SycoGhostNode implements MinerNode {
             newBlockTotalHeight = parentBlock.getTotalHeight()+1;
             this.blockTxs = new HashSet<>();
             long totalGas = 0;
-            for (SycomoreTx sycomoreTx:memPool) { //for each transaction in the mempool
+            for (SycoGhostTx sycomoreTx:memPool) { //for each transaction in the mempool
                 if ((totalGas + sycomoreTx.getGas()) > MAXIMUM_BLOCK_GAS) {
                     break;
                 }
                 blockTxs.add(sycomoreTx);
                 totalGas += sycomoreTx.getGas();
             }
-            SycomoreBlockWithTx newSycoBlockWithTX = new SycomoreBlockWithTx(new BlockHeader(),newBlockLabel,newBlockHeightInChain,newBlockTotalHeight,simulator.getSimulationTime(),this, newBlockParents,null, blockTxs,0,0);
+            SycoGhostBlockWithTx newSycoBlockWithTX = new SycoGhostBlockWithTx(new SGBlockHeader(),newBlockLabel,newBlockHeightInChain,newBlockTotalHeight,simulator.getSimulationTime(),this, newBlockParents,null, blockTxs,0,0);
             spreadBlock(newSycoBlockWithTX);
             //BLOCK 2
             //Header??
@@ -112,7 +116,7 @@ public class SycoGhostMinerNode extends SycoGhostNode implements MinerNode {
             newBlockTotalHeight = parentBlock.getTotalHeight()+1;
             this.blockTxs = new HashSet<>();
             totalGas = 0;
-            for (SycomoreTx sycomoreTx:memPool) { //for each transaction in the mempool
+            for (SycoGhostTx sycomoreTx:memPool) { //for each transaction in the mempool
                 //System.err.println("ADDING TRANSACTION");
                 if ((totalGas + sycomoreTx.getGas()) > MAXIMUM_BLOCK_GAS) {
                     break;
@@ -122,7 +126,7 @@ public class SycoGhostMinerNode extends SycoGhostNode implements MinerNode {
             }
             //System.err.println("In the block there are: "+ blockTxs.size() + " transactions" );
 
-            newSycoBlockWithTX = new SycomoreBlockWithTx(new BlockHeader(),newBlockLabel,newBlockHeightInChain,newBlockTotalHeight,simulator.getSimulationTime(),this, newBlockParents,null, blockTxs,0,0);
+            newSycoBlockWithTX = new SycoGhostBlockWithTx(new SGBlockHeader(),newBlockLabel,newBlockHeightInChain,newBlockTotalHeight,simulator.getSimulationTime(),this, newBlockParents,null, blockTxs,0,0);
             spreadBlock(newSycoBlockWithTX);
 
 
@@ -135,7 +139,7 @@ public class SycoGhostMinerNode extends SycoGhostNode implements MinerNode {
             //1: Controlliamo se anche il fratello è mergeable, se no lo trattiamo come un blocco normale
             //TODO controllare che getleaf funzioni bene, anche per blocchi con piu parent
             //Se tutti e 2 sono mergeable, creiamo un nuovo blocco con quei 2 blocchi come parents
-            SycomoreBlock brother = find_brother(parentBlock);
+            SycoGhostBlock brother = find_brother(parentBlock);
             if (brother!=null){
                 //Quindi esiste unn fratello mergeable
                 newBlockParents.add(parentBlock);
@@ -146,14 +150,14 @@ public class SycoGhostMinerNode extends SycoGhostNode implements MinerNode {
 
                 this.blockTxs = new HashSet<>();
                 long totalGas = 0;
-                for (SycomoreTx sycomoreTx:memPool) { //for each transaction in the mempool
+                for (SycoGhostTx sycomoreTx:memPool) { //for each transaction in the mempool
                     if ((totalGas + sycomoreTx.getGas()) > MAXIMUM_BLOCK_GAS) {
                         break;
                     }
                     blockTxs.add(sycomoreTx);
                     totalGas += sycomoreTx.getGas();
                 }
-                SycomoreBlockWithTx newSycoBlockWithTX = new SycomoreBlockWithTx(new BlockHeader(),newBlockLabel,newBlockHeightInChain,newBlockTotalHeight,simulator.getSimulationTime(),this, newBlockParents,null, blockTxs,0,0);
+                SycoGhostBlockWithTx newSycoBlockWithTX = new SycoGhostBlockWithTx(new SGBlockHeader(),newBlockLabel,newBlockHeightInChain,newBlockTotalHeight,simulator.getSimulationTime(),this, newBlockParents,null, blockTxs,0,0);
                 spreadBlock(newSycoBlockWithTX);
 
             }}
@@ -169,7 +173,7 @@ public class SycoGhostMinerNode extends SycoGhostNode implements MinerNode {
 
                 this.blockTxs = new HashSet<>();
                 long totalGas = 0;
-                for (SycomoreTx sycomoreTx:memPool) { //for each transaction in the mempool
+                for (SycoGhostTx sycomoreTx:memPool) { //for each transaction in the mempool
                     if ((totalGas + sycomoreTx.getGas()) > MAXIMUM_BLOCK_GAS) {
                         break;
                     }
@@ -178,8 +182,8 @@ public class SycoGhostMinerNode extends SycoGhostNode implements MinerNode {
                 }
 
             //System.err.println("456In the block there are: "+ blockTxs.size() + " transactions" );
-            SycomoreBlockWithTx newSycoBlockWithTX = new SycomoreBlockWithTx(new BlockHeader(),newBlockLabel,newBlockHeightInChain,newBlockTotalHeight,simulator.getSimulationTime(),this, newBlockParents,null, blockTxs,0,0);
-                spreadBlock(newSycoBlockWithTX);
+            SycoGhostBlock newSycoGhostBlockWithTX = new SycoGhostBlockWithTx(new SGBlockHeader(),newBlockLabel,newBlockHeightInChain,newBlockTotalHeight,simulator.getSimulationTime(),this, newBlockParents,null, blockTxs,0,0);
+                spreadBlock(newSycoGhostBlockWithTX);
             }
 
 
@@ -200,7 +204,7 @@ public class SycoGhostMinerNode extends SycoGhostNode implements MinerNode {
         //HashMap<Integer,Integer> map = SycomoreNodeUtils.arrayToMap(load_array);
         //while(this.getSimulator().getSimulationTime()<map.ge)
         for (int i = 1; i <= 1000; i++) {
-            memPool.add((SycomoreTx) new SycomoreTx(3000, 22000));
+            memPool.add((SycoGhostTx) new SycoGhostTx(3000, 22000));
         }
     }
 
@@ -229,17 +233,17 @@ public class SycoGhostMinerNode extends SycoGhostNode implements MinerNode {
     public double getHashPower() {
         return this.hashPower;
     }
-    private  List<SycomoreBlock> usableLeaves ( Set<SycomoreBlock> leafBlocks) {
+    private  List<SycoGhostBlock> usableLeaves ( Set<SycoGhostBlock> leafBlocks) {
         //Since we want to avoid the growth of just one chain...
         //the sycomore protocol allows to append new blocks only on chains which are not
         //so long and we have also to discard uncles
 
         // Create a map to store the maximum weight block for each label,
         //because this is the main chain for each label
-        Map<String, SycomoreBlock> maxWeightBlocksByLabel = new HashMap<>();
+        Map<String, SycoGhostBlock> maxWeightBlocksByLabel = new HashMap<>();
 
         // Iterate through each block
-        for (SycomoreBlock block : leafBlocks) {
+        for (SycoGhostBlock block : leafBlocks) {
             String label = block.getLabel();
             SycoGhostProtocol consensusAlgorithm = (SycoGhostProtocol) this.getConsensusAlgorithm();
             double curr_block_weight = consensusAlgorithm.getWeight(block);
@@ -259,17 +263,17 @@ public class SycoGhostMinerNode extends SycoGhostNode implements MinerNode {
         //now we just need to discard the label we cannot append a new block to because of the
         //length of the chain
 
-        LinkedList<SycomoreBlock> usableLeaves = new LinkedList<SycomoreBlock>();
+        LinkedList<SycoGhostBlock> usableLeaves = new LinkedList<SycoGhostBlock>();
 
         // You can iterate over the map to access the results
         int minChainHeight = Integer.MAX_VALUE;
 
-        for (Map.Entry<String, SycomoreBlock> entry : maxWeightBlocksByLabel.entrySet()) {
+        for (Map.Entry<String, SycoGhostBlock> entry : maxWeightBlocksByLabel.entrySet()) {
             if(entry.getValue().getTotalHeight()<minChainHeight)
                 minChainHeight = entry.getValue().getTotalHeight();
         }
 
-        for (Map.Entry<String, SycomoreBlock> entry : maxWeightBlocksByLabel.entrySet()) {
+        for (Map.Entry<String, SycoGhostBlock> entry : maxWeightBlocksByLabel.entrySet()) {
             if(entry.getValue().getTotalHeight()<minChainHeight+5)
                 usableLeaves.add(entry.getValue());
 
@@ -279,12 +283,12 @@ public class SycoGhostMinerNode extends SycoGhostNode implements MinerNode {
         return usableLeaves;
     }
 
-    private SycomoreBlock find_brother(SycomoreBlock mergeable_block){
+    private SycoGhostBlock find_brother(SycoGhostBlock mergeable_block){
 
-        Set<SycomoreBlock> blocks = this.localBlockTree.getAllBlocks();
-        List<SycomoreBlock> filteredBlocks = new ArrayList<>();
+        Set<SycoGhostBlock> blocks = this.localBlockTree.getAllBlocks();
+        List<SycoGhostBlock> filteredBlocks = new ArrayList<>();
 
-        for (SycomoreBlock block : blocks) {
+        for (SycoGhostBlock block : blocks) {
             if (block.getLabel().length() == mergeable_block.getLabel().length() &&
                     SycomoreBlockUtils.binaryDistance(mergeable_block.getLabel(), block.getLabel()) == 1 &&
                     mergeable_block.getTotalHeight() == block.getTotalHeight()) {
@@ -299,17 +303,17 @@ public class SycoGhostMinerNode extends SycoGhostNode implements MinerNode {
     }
 
     @Override
-    protected void processNewTx(SycomoreTx sycomoreTx, Node from) {
+    protected void processNewTx(SycoGhostTx sycomoreTx, Node from) {
         System.err.println("123 Process new transaction syco called");
 
         // add to memPool
-        memPool.add((SycomoreTx) sycomoreTx);
+        memPool.add((SycoGhostTx) sycomoreTx);
 
-        this.broadcastTransaction((SycomoreTx) sycomoreTx, from);
+        this.broadcastTransaction((SycoGhostTx) sycomoreTx, from);
     }
 
     @Override
-    protected void processNewBlock(SycomoreBlock sycomoreBlock) {
+    protected void processNewBlock(SycoGhostBlock sycomoreBlock) {
         //this is the function to process a new block
         //the consensusalgorithm processes the new block
         this.consensusAlgorithm.newIncomingBlock(sycomoreBlock);
@@ -319,8 +323,8 @@ public class SycoGhostMinerNode extends SycoGhostNode implements MinerNode {
 
         // remove from memPool
 
-        if (sycomoreBlock instanceof SycomoreBlockWithTx) {
-            for (SycomoreTx sycomoreTx: ((SycomoreBlockWithTx) sycomoreBlock).getTxs()) {
+        if (sycomoreBlock instanceof SycoGhostBlockWithTx) {
+            for (SycoGhostTx sycomoreTx: ((SycoGhostBlockWithTx) sycomoreBlock).getTxs()) {
                 memPool.remove(sycomoreTx); // TODO: This should be changed. Ethereum reverts Txs from non canonical chain
             }
         }
@@ -340,7 +344,7 @@ public class SycoGhostMinerNode extends SycoGhostNode implements MinerNode {
         return label;
     }
 
-    private void spreadBlock(SycomoreBlock sycomoreBlockWithTx){
+    private void spreadBlock(SycoGhostBlock sycomoreBlockWithTx){
         this.processIncomingPacket(
                 new Packet(
                         this, this, new DataMessage(sycomoreBlockWithTx)

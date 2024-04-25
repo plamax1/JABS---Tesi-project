@@ -2,6 +2,8 @@ package jabs.network.node.nodes.sycomore;
 
 import jabs.consensus.algorithm.AbstractChainBasedConsensus;
 import jabs.consensus.algorithm.AbstractDAGBasedConsensus;
+import jabs.consensus.algorithm.SycoGhostProtocol;
+import jabs.consensus.algorithm.SycomoreConsensusAlgorithm;
 import jabs.consensus.config.GhostProtocolConfig;
 import jabs.consensus.config.SycomoreProtocolConfig;
 import jabs.ledgerdata.Block;
@@ -221,8 +223,10 @@ public class SycomoreMinerNode extends SycomoreNode implements MinerNode {
      */
     @Override
     public void startMining() {
+        ///TODO FIX AVG TIME BETWEEN BLOCKS
         System.err.println("Startmining called");
         //here you have to implement the average time between blocks
+        SycomoreConsensusAlgorithm consensusAlgorithm = (SycomoreConsensusAlgorithm) this.getConsensusAlgorithm();
         BlockMiningProcess blockMiningProcess = new BlockMiningProcess(this.simulator, this.network.getRandom(),
                 4, this);
         this.miningProcess = this.simulator.putEvent(blockMiningProcess, blockMiningProcess.timeToNextGeneration());

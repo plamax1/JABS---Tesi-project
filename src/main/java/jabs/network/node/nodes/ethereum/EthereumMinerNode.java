@@ -9,6 +9,7 @@ import jabs.ledgerdata.ethereum.EthereumBlockWithTx;
 import jabs.ledgerdata.ethereum.EthereumTx;
 import jabs.network.message.DataMessage;
 import jabs.network.message.Packet;
+import jabs.network.networks.GlobalProofOfWorkNetwork;
 import jabs.network.networks.Network;
 import jabs.network.node.nodes.MinerNode;
 import jabs.network.node.nodes.Node;
@@ -18,6 +19,7 @@ import jabs.simulator.event.BlockMiningProcess;
 import jabs.simulator.event.NewUncleEvent;
 
 import java.util.HashSet;
+import java.util.List;
 import java.util.Set;
 
 import static jabs.ledgerdata.BlockFactory.ETHEREUM_MIN_DIFFICULTY;
@@ -26,7 +28,7 @@ public class EthereumMinerNode extends EthereumNode implements MinerNode {
     //This is the ethereum miner node, and in ethereum only miner nodes can generate new blocks
     protected Set<EthereumTx> memPool = new HashSet<>();
     protected Set<EthereumBlock> alreadyUncledBlocks = new HashSet<>();
-    protected final double hashPower;
+    protected double hashPower;
     protected Simulator.ScheduledEvent miningProcess;
     static final long MAXIMUM_BLOCK_GAS = 12500000;
     private int currentNumUncles;
@@ -53,10 +55,15 @@ public class EthereumMinerNode extends EthereumNode implements MinerNode {
     public void generateNewBlock() {//qui noi generiamo un nuovo blocco
         EthereumBlock canonicalChainHead = this.consensusAlgorithm.getCanonicalChainHead();
         Simulator simulator = this.getSimulator();
+        //if(((int) simulator.getSimulationTime()%10)==0){
+          //  System.err.println("Time: "+simulator.getSimulationTime() + " current avg time between blocks: "+blockMiningProcess.averageTimeBetweenGenerations);
+        //}
+
+
         if(simulator.getSimulationTime()>1800 && !done_flag){
-            System.err.println("Time: "+simulator.getSimulationTime());
-            blockMiningProcess.averageTimeBetweenGenerations=6;
+            updateAverageTimeBetweenBlocks(6);
             done_flag=true;
+
         }
 
         Set<EthereumBlock> tipBlocks = this.localBlockTree.getChildlessBlocks();
@@ -78,6 +85,8 @@ public class EthereumMinerNode extends EthereumNode implements MinerNode {
                 canonicalChainHead.getHeight()+1, simulator.getSimulationTime(), this,
                 this.getConsensusAlgorithm().getCanonicalChainHead(), tipBlocks, blockTxs, ETHEREUM_MIN_DIFFICULTY,
                 weight); // TODO: Difficulty?
+
+        //System.err.println(ethereumBlockWithTx.getDifficulty());
         this.processIncomingPacket(//and the block is propagated
                 new Packet(
                         this, this, new DataMessage(ethereumBlockWithTx)
@@ -93,6 +102,8 @@ public class EthereumMinerNode extends EthereumNode implements MinerNode {
         blockMiningProcess  = new BlockMiningProcess(this.simulator, this.network.getRandom(),
                 this.consensusAlgorithm.getCanonicalChainHead().getDifficulty()/((double) this.hashPower), this);
         this.miningProcess = this.simulator.putEvent(blockMiningProcess, blockMiningProcess.timeToNextGeneration());
+        System.err.println("Starting mining" + this.nodeID + " difficulty" + this.consensusAlgorithm.getCanonicalChainHead().getDifficulty()+ " hashpower " +  this.hashPower + "average time between blocks: "+blockMiningProcess.averageTimeBetweenGenerations);
+
     }
 
     /**
@@ -142,6 +153,19 @@ public class EthereumMinerNode extends EthereumNode implements MinerNode {
                 currentNumUncles=newNumUncles;
                 simulator.putEvent(new NewUncleEvent(simulator.getSimulationTime(),this,currentNumUncles),0);
             }
+
+    }
+
+    private void updateAverageTimeBetweenBlocks (double newAvgTimeBetweenBlocks){
+        GlobalProofOfWorkNetwork globalProofOfWorkNetwork = (GlobalProofOfWorkNetwork) this.getNetwork();
+        long totalHashPower = globalProofOfWorkNetwork.totalHashPower;
+        List<Double> hashPowers = globalProofOfWorkNetwork.hashPowers;
+        //System.err.println( "Node id: " + this.nodeID+ "avg time between blocks: "+blockMiningProcess.averageTimeBetweenGenerations);
+        double hashPowerScale = 2097.0 / (totalHashPower * newAvgTimeBetweenBlocks);
+        this.hashPower= hashPowerScale * hashPowers.get(this.nodeID);
+        //this.blockMiningProcess.averageTimeBetweenGenerations= this.consensusAlgorithm.getCanonicalChainHead().getDifficulty()/((double) this.hashPower);
+        this.blockMiningProcess.averageTimeBetweenGenerations = 2097 / (hashPowerScale* hashPowers.get(this.nodeID));
+        System.err.println( "Node id: " + this.nodeID+ "UPDATED avg time between blocks: "+blockMiningProcess.averageTimeBetweenGenerations);
 
     }
 

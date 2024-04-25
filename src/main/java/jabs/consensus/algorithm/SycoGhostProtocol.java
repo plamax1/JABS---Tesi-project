@@ -3,8 +3,11 @@ package jabs.consensus.algorithm;
 import jabs.consensus.blockchain.LocalBlockDAG;
 import jabs.consensus.blockchain.LocalBlockTree;
 import jabs.consensus.config.GhostProtocolConfig;
+import jabs.consensus.config.SycoGhostProtocolConfig;
 import jabs.ledgerdata.SingleParentBlock;
 import jabs.ledgerdata.Tx;
+import jabs.ledgerdata.sycoghost.SycoGhostBlock;
+import jabs.ledgerdata.sycoghost.SycoGhostTx;
 import jabs.ledgerdata.sycomore.SycomoreBlock;
 import jabs.ledgerdata.sycomore.SycomoreTx;
 import jabs.simulator.Simulator;
@@ -15,44 +18,44 @@ import java.util.HashMap;
 import java.util.HashSet;
 import java.util.Map;
 
-public class SycoGhostProtocol extends AbstractDAGBasedConsensus<SycomoreBlock, SycomoreTx>{
+public class SycoGhostProtocol extends AbstractDAGBasedConsensus<SycoGhostBlock, SycoGhostTx>{
     //in this case we have more than one chain, and each chain has a different label
-    private final HashMap<SycomoreBlock, Integer> totalWeights = new HashMap<>();
+    private final HashMap<SycoGhostBlock, Integer> totalWeights = new HashMap<>();
     public static int DEFAULT_GHOST_WEIGHT = 1;
-    private Map<String, SycomoreBlock> chainHeadSet;
+    private Map<String, SycoGhostBlock> chainHeadSet;
 
     private int CONFIRMATION_DEPHT = 6;
-    protected SycomoreBlock originOfGhost;
+    protected SycoGhostBlock originOfGhost;
     public double averageBlockMiningInterval;
 
-    public SycoGhostProtocol(LocalBlockDAG<SycomoreBlock> localBlockDAG, GhostProtocolConfig ghostProtocolConfig) {
+    public SycoGhostProtocol(LocalBlockDAG<SycoGhostBlock> localBlockDAG, SycoGhostProtocolConfig sycoGhostProtocolConfig) {
         super(localBlockDAG);
         this.originOfGhost = localBlockDAG.getGenesisBlock();
         this.newIncomingBlock(localBlockDAG.getGenesisBlock());
         chainHeadSet.put("ε", localBlockDAG.getGenesisBlock());
-        this.averageBlockMiningInterval = ghostProtocolConfig.averageBlockMiningInterval();
+        this.averageBlockMiningInterval = sycoGhostProtocolConfig.averageBlockMiningInterval();
     }
 
     @Override
-    public void newIncomingBlock(SycomoreBlock block) { //here is what happens when we receive a new ethereum block
+    public void newIncomingBlock(SycoGhostBlock block) { //here is what happens when we receive a new ethereum block
         //System.err.println(this.peerBlockchainNode);
         totalWeights.put(block, DEFAULT_GHOST_WEIGHT);
         if (this.localBlockDAG.getLocalBlock(block).isConnectedToGenesis) {
-            for (SycomoreBlock ancestor:this.localBlockDAG.getAllAncestors(block)) {
+            for (SycoGhostBlock ancestor:this.localBlockDAG.getAllAncestors(block)) {
                 if (!totalWeights.containsKey(ancestor)) {
                     totalWeights.put(ancestor, DEFAULT_GHOST_WEIGHT);
                 }
                 totalWeights.put(ancestor, totalWeights.get(ancestor) + DEFAULT_GHOST_WEIGHT);
             }
         }
-        SycomoreBlock ghostCurrentLabelMainChainHead = this.ghost();
+        SycoGhostBlock ghostCurrentLabelMainChainHead = this.ghost();
         if (this.chainHeadSet.get(block.getLabel()) != ghostCurrentLabelMainChainHead) {
             this.chainHeadSet.put(block.getLabel(), ghostCurrentLabelMainChainHead);
             updateChain();
         }
     }
-    public SycomoreBlock ghost() {
-        SycomoreBlock block = this.originOfGhost;
+    public SycoGhostBlock ghost() {
+        SycoGhostBlock block = this.originOfGhost;
 
         while (true) {
             if (totalWeights.get(block) == 1) {
@@ -60,8 +63,8 @@ public class SycoGhostProtocol extends AbstractDAGBasedConsensus<SycomoreBlock, 
             }
 
             int maxWeight = 0;
-            HashSet<SycomoreBlock> children = this.localBlockDAG.getChildren(block);
-            for (SycomoreBlock child: children) {
+            HashSet<SycoGhostBlock> children = this.localBlockDAG.getChildren(block);
+            for (SycoGhostBlock child: children) {
                 if (localBlockDAG.getLocalBlock(child).isConnectedToGenesis) {
                     if (totalWeights.get(child)!=null && totalWeights.get(child) > maxWeight) {
                         maxWeight = totalWeights.get(child);
@@ -76,7 +79,7 @@ public class SycoGhostProtocol extends AbstractDAGBasedConsensus<SycomoreBlock, 
         //this.confirmedBlock is the real confirmed chain, which gets updated after
         //each new block is added
         //this.confirmedBlocks = this.localBlockDAG.getAllAncestors(this.currentMainChainHead);
-        for (SycomoreBlock block: this.chainHeadSet.values()) {
+        for (SycoGhostBlock block: this.chainHeadSet.values()) {
             this.confirmedBlocks.addAll(this.localBlockDAG.getAllAncestors(block));
         }/*
         if(this.peerDLTNode!=null){
@@ -105,7 +108,7 @@ public class SycoGhostProtocol extends AbstractDAGBasedConsensus<SycomoreBlock, 
     public void setAverageBlockMiningInterval(double averageBlockMiningInterval) {
         this.averageBlockMiningInterval = averageBlockMiningInterval;
     }
-    public int getWeight (SycomoreBlock block){
+    public int getWeight (SycoGhostBlock block){
         return totalWeights.get(block);
     }
 

@@ -1,12 +1,16 @@
 package jabs.network.node.nodes.sycoghost;
 
 import jabs.consensus.algorithm.AbstractDAGBasedConsensus;
+import jabs.consensus.algorithm.SycoGhostProtocol;
 import jabs.consensus.algorithm.SycomoreConsensusAlgorithm;
 import jabs.consensus.algorithm.VotingBasedConsensus;
 import jabs.consensus.blockchain.LocalBlockDAG;
+import jabs.consensus.config.SycoGhostProtocolConfig;
 import jabs.consensus.config.SycomoreProtocolConfig;
 import jabs.ledgerdata.TransactionFactory;
 import jabs.ledgerdata.Vote;
+import jabs.ledgerdata.sycoghost.SycoGhostBlock;
+import jabs.ledgerdata.sycoghost.SycoGhostTx;
 import jabs.ledgerdata.sycomore.SycomoreBlock;
 import jabs.ledgerdata.sycomore.SycomoreTx;
 import jabs.network.message.DataMessage;
@@ -21,19 +25,19 @@ import jabs.simulator.Simulator;
 
 import static org.apache.commons.math3.util.FastMath.sqrt;
 
-public class SycoGhostNode extends PeerDLTNode<SycomoreBlock, SycomoreTx> {
+public class SycoGhostNode extends PeerDLTNode<SycoGhostBlock, SycoGhostTx> {
     //qui abbiamo 2 costruttori
     public SycoGhostNode(Simulator simulator, Network network, int nodeID, long downloadBandwidth, long uploadBandwidth,
-                         SycomoreBlock genesisBlock, SycomoreProtocolConfig sycomoreProtocolConfig) { //the constructor,
+                         SycoGhostBlock genesisBlock, SycoGhostProtocolConfig sycoGhostProtocolConfig) { //the constructor,
         //takes as parameters, simulator, network, nodeid, download and upload bandwidth, and protocol config
         super(simulator, network, nodeID, downloadBandwidth, uploadBandwidth,
                 new EthereumGethP2P(), //this is abstractp2pconnection -> used with ethereumgetp2p
                 //new GhostProtocol<>(new LocalBlockTree<>(genesisBlock), ghostProtocolConfig));
-                new SycomoreConsensusAlgorithm(new LocalBlockDAG<>(genesisBlock), sycomoreProtocolConfig));
+                new SycoGhostProtocol(new LocalBlockDAG<>(genesisBlock), sycoGhostProtocolConfig));
     }
 
     public SycoGhostNode(Simulator simulator, Network network, int nodeID, long downloadBandwidth, long uploadBandwidth,
-                         AbstractDAGBasedConsensus<SycomoreBlock, SycomoreTx> consensusAlgorithm) {
+                         AbstractDAGBasedConsensus<SycoGhostBlock, SycoGhostTx> consensusAlgorithm) {
         //this is the second costructor, here we don't have the genesisblock and the ghostprocoilconfig, but the
          //abstractchainbasedconsensus
         super(simulator, network, nodeID, downloadBandwidth, uploadBandwidth,
@@ -42,14 +46,14 @@ public class SycoGhostNode extends PeerDLTNode<SycomoreBlock, SycomoreTx> {
     }
 
     @Override
-    protected void processNewTx(SycomoreTx sycomoreTx, Node from) {
+    protected void processNewTx(SycoGhostTx sycomoreTx, Node from) {
         System.err.println("4321 Transaction received");
 
         this.broadcastTransaction(sycomoreTx, from);
     }
 
     @Override
-    protected void processNewBlock(SycomoreBlock sycomoreBlock) {
+    protected void processNewBlock(SycoGhostBlock sycomoreBlock) {
         this.consensusAlgorithm.newIncomingBlock(sycomoreBlock);
         this.broadcastNewBlockAndBlockHashes(sycomoreBlock);
     }
@@ -77,10 +81,10 @@ public class SycoGhostNode extends PeerDLTNode<SycomoreBlock, SycomoreTx> {
     public void generateNewTransaction() {
         System.err.println("1234 Generate new transaction syco called");
         //This is to generate new transactions.
-        broadcastTransaction(TransactionFactory.sampleSycomoreTransaction(network.getRandom()));
+        broadcastTransaction(TransactionFactory.sampleSycoGhostTransaction(network.getRandom()));
     }
 
-    protected void broadcastNewBlockAndBlockHashes(SycomoreBlock sycomoreBlock){
+    protected void broadcastNewBlockAndBlockHashes(SycoGhostBlock sycomoreBlock){
         for (int i = 0; i < this.p2pConnections.getNeighbors().size(); i++) {
             Node neighbor = this.p2pConnections.getNeighbors().get(i);
             if (i < sqrt(this.p2pConnections.getNeighbors().size())){
@@ -99,7 +103,7 @@ public class SycoGhostNode extends PeerDLTNode<SycomoreBlock, SycomoreTx> {
         }
     }
 
-    protected void broadcastTransaction(SycomoreTx tx, Node excludeNeighbor) {
+    protected void broadcastTransaction(SycoGhostTx tx, Node excludeNeighbor) {
         for (Node neighbor:this.p2pConnections.getNeighbors()) {
             if (neighbor != excludeNeighbor){
                 this.networkInterface.addToUpLinkQueue(
@@ -111,7 +115,7 @@ public class SycoGhostNode extends PeerDLTNode<SycomoreBlock, SycomoreTx> {
         }
     }
 
-    protected void broadcastTransaction(SycomoreTx tx) {
+    protected void broadcastTransaction(SycoGhostTx tx) {
         broadcastTransaction(tx, null);
     }
 

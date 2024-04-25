@@ -21,6 +21,8 @@ public abstract class GlobalProofOfWorkNetwork<N extends Node, M extends MinerNo
     protected final List<MinerNode> miners = new ArrayList<>();
     protected final MinerGlobalRegionDistribution<R> minerDistribution;
     //So the minerdistribution is essentially the networkstats.
+    public List<Double> hashPowers;
+    public long totalHashPower;
 
     protected GlobalProofOfWorkNetwork(RandomnessEngine randomnessEngine, ProofOfWorkGlobalNetworkStats<R> networkStats) {
         super(randomnessEngine, networkStats);
@@ -78,8 +80,8 @@ public abstract class GlobalProofOfWorkNetwork<N extends Node, M extends MinerNo
                                 ConsensusAlgorithmConfig consensusAlgorithmConfig) {
         //qui mettiamo a disposizione la funzione populateNetwork vera e propria, che
         //prende i miner, non miner, l'algoritmo di consenso e il sumulatore
-        long totalHashPower = 0;
-        List<Double> hashPowers = new ArrayList<>();
+        this.totalHashPower = 0;
+        this.hashPowers = new ArrayList<>();
         for (int i = 0; i < numMiners; i++) {
             double hashPower = sampleHashPower();
             hashPowers.add(hashPower);
