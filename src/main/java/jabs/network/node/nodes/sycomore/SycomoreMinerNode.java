@@ -13,6 +13,7 @@ import jabs.ledgerdata.ethereum.EthereumTx;
 import jabs.ledgerdata.sycomore.*;
 import jabs.network.message.DataMessage;
 import jabs.network.message.Packet;
+import jabs.network.networks.GlobalProofOfWorkNetwork;
 import jabs.network.networks.Network;
 import jabs.network.node.nodes.MinerNode;
 import jabs.network.node.nodes.Node;
@@ -33,12 +34,17 @@ public class SycomoreMinerNode extends SycomoreNode implements MinerNode {
     protected Set<SycomoreTx> memPool = new HashSet<>();
     //mempool, sort of waiting room for transaction still not included in a block
     protected Set<SycomoreBlock> alreadyUncledBlocks = new HashSet<>();
-    protected final double hashPower;
+    protected double hashPower;
     protected Simulator.ScheduledEvent miningProcess;
     static final long MAXIMUM_BLOCK_GAS = 12500000;
     private final int MAX_UNBALANCE = 5;
     Random rand = new Random();
     private TxGenerationProcessSingleNode txGenerationProcessSingleNode;
+    private BlockMiningProcess blockMiningProcess;
+    private final int H_MAX = 2016;
+
+    private int last_diff_adjustment_height;
+
 
     Set<SycomoreTx> blockTxs = new HashSet<>();
 
@@ -52,9 +58,7 @@ public class SycomoreMinerNode extends SycomoreNode implements MinerNode {
         blockTxs = new HashSet<>();
         //System.err.println("Hi, this is sycomore node: " + this.toString());
         txGenerationProcessSingleNode = new TxGenerationProcessSingleNode(this.getSimulator(), randomnessEngine, this,1);
-        txGenerationProcessSingleNode.generate();
-        txGenerationProcessSingleNode.generate();
-        txGenerationProcessSingleNode.generate();
+        last_diff_adjustment_height=0;
     }
 
     public SycomoreMinerNode(Simulator simulator, Network network, int nodeID, long downloadBandwidth,
@@ -64,6 +68,7 @@ public class SycomoreMinerNode extends SycomoreNode implements MinerNode {
         super(simulator, network, nodeID, downloadBandwidth, uploadBandwidth, consensusAlgorithm);
         this.hashPower = hashPower;
         blockTxs = new HashSet<>();
+        last_diff_adjustment_height=0;
     }
 
 
@@ -90,6 +95,7 @@ public class SycomoreMinerNode extends SycomoreNode implements MinerNode {
         String newBlockLabel;
 
         Set<SycomoreBlock> leafBlocks = this.localBlockTree.getChildlessBlocks();
+        int currNumChains = countUniqueLabels(leafBlocks);
 
         //System.err.println("leaf Blocks: " + leafBlocks.toString());
 
@@ -139,7 +145,7 @@ public class SycomoreMinerNode extends SycomoreNode implements MinerNode {
             newSycoBlockWithTX = new SycomoreBlockWithTx(new BlockHeader(),newBlockLabel,newBlockHeightInChain,newBlockTotalHeight,simulator.getSimulationTime(),this, newBlockParents,null, blockTxs,0,0);
             spreadBlock(newSycoBlockWithTX);
 
-
+            //updateAverageTimeBetweenBlocks(((SycomoreConsensusAlgorithm) this.getConsensusAlgorithm()).averageBlockMiningInterval/(currNumChains+1));
         }
 
         if(parentBlock.isMergeable()){
@@ -169,6 +175,7 @@ public class SycomoreMinerNode extends SycomoreNode implements MinerNode {
                 }
                 SycomoreBlockWithTx newSycoBlockWithTX = new SycomoreBlockWithTx(new BlockHeader(),newBlockLabel,newBlockHeightInChain,newBlockTotalHeight,simulator.getSimulationTime(),this, newBlockParents,null, blockTxs,0,0);
                 spreadBlock(newSycoBlockWithTX);
+                //updateAverageTimeBetweenBlocks(((SycomoreConsensusAlgorithm) this.getConsensusAlgorithm()).averageBlockMiningInterval/(currNumChains-1));
 
             }}
 
@@ -228,7 +235,8 @@ public class SycomoreMinerNode extends SycomoreNode implements MinerNode {
         //here you have to implement the average time between blocks
         SycomoreConsensusAlgorithm consensusAlgorithm = (SycomoreConsensusAlgorithm) this.getConsensusAlgorithm();
         BlockMiningProcess blockMiningProcess = new BlockMiningProcess(this.simulator, this.network.getRandom(),
-                4, this);
+                consensusAlgorithm.averageBlockMiningInterval, this);
+        System.err.println("Sycomore avg block mining interval " + consensusAlgorithm.averageBlockMiningInterval);
         this.miningProcess = this.simulator.putEvent(blockMiningProcess, blockMiningProcess.timeToNextGeneration());
 
 
@@ -246,19 +254,17 @@ public class SycomoreMinerNode extends SycomoreNode implements MinerNode {
         return this.hashPower;
     }
     private  List<SycomoreBlock> usableLeaves ( Set<SycomoreBlock> leafBlocks) {
-        //Since we want to avoid the growth of just one chain...
-        //the sycomore protocol allows to append new blocks only on chains which are not
-        //so long
+        //--1 We have to discard the leaves which are more that H_MAX blocks distant from the
+        //last difficulty adjustment height
         LinkedList<SycomoreBlock> usableLeaves = new LinkedList<SycomoreBlock>();
-        int minChainHeight = Integer.MAX_VALUE;
         for (SycomoreBlock leaf : leafBlocks){
-            if(leaf.getHeight()<minChainHeight)
-                minChainHeight = leaf.getHeight();
-        }
-
-        for (SycomoreBlock leaf : leafBlocks){
-            if(leaf.getHeight()<minChainHeight+5)
+            if(leaf.getTotalHeight()-last_diff_adjustment_height<=-H_MAX)
                 usableLeaves.add(leaf);
+        }
+        //If there are no usable leaves, all the leaves have reached the re_adjustment height, so we
+        //can trigger the difficulty adjustment
+        if(usableLeaves.isEmpty()){
+            updateAverageTimeBetweenBlocks((double) 600 /countUniqueLabels(leafBlocks));
         }
 
         return usableLeaves;
@@ -312,18 +318,6 @@ public class SycomoreMinerNode extends SycomoreNode implements MinerNode {
 
         this.broadcastNewBlockAndBlockHashes(sycomoreBlock);
     }
-    private String compute_l_j (SycomoreBlock block) {
-        //here we compute the label of the next block to be appended
-        String label = block.getLabel().toString();
-        if(block.isSplittable()){
-            label +='0';
-        }
-        if (block.isMergeable()){
-            label = label.substring(0, label.length());
-        }
-
-        return label;
-    }
 
     private void spreadBlock(SycomoreBlock sycomoreBlockWithTx){
         this.processIncomingPacket(
@@ -332,6 +326,27 @@ public class SycomoreMinerNode extends SycomoreNode implements MinerNode {
                 )
         );
 
+    }
+
+    private void updateAverageTimeBetweenBlocks (double newAvgTimeBetweenBlocks){
+        GlobalProofOfWorkNetwork globalProofOfWorkNetwork = (GlobalProofOfWorkNetwork) this.getNetwork();
+        long totalHashPower = globalProofOfWorkNetwork.totalHashPower;
+        List<Double> hashPowers = globalProofOfWorkNetwork.hashPowers;
+        //System.err.println( "Node id: " + this.nodeID+ "avg time between blocks: "+blockMiningProcess.averageTimeBetweenGenerations);
+        double hashPowerScale = 2097.0 / (totalHashPower * newAvgTimeBetweenBlocks);
+        this.hashPower= hashPowerScale * hashPowers.get(this.nodeID);
+        //this.blockMiningProcess.averageTimeBetweenGenerations= this.consensusAlgorithm.getCanonicalChainHead().getDifficulty()/((double) this.hashPower);
+        this.blockMiningProcess.averageTimeBetweenGenerations = 2097 / (hashPowerScale* hashPowers.get(this.nodeID));
+        System.err.println( "Node id: " + this.nodeID+ "UPDATED avg time between blocks: "+blockMiningProcess.averageTimeBetweenGenerations);
+
+    }
+
+    public int countUniqueLabels(Set<SycomoreBlock> leafBlocks) {
+        Set<String> uniqueLabels = new HashSet<>();
+        for (SycomoreBlock block : leafBlocks) {
+            uniqueLabels.add(block.getLabel());
+        }
+        return uniqueLabels.size();
     }
 
 

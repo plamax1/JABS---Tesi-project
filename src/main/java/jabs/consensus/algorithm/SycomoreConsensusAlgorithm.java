@@ -21,7 +21,7 @@ public class SycomoreConsensusAlgorithm extends AbstractDAGBasedConsensus<Sycomo
    //private final HashMap<, Integer> totalWeights = new HashMap<>();
     public static int DEFAULT_GHOST_WEIGHT = 1;
     protected SycomoreBlock originOfGhost;
-    private double averageBlockMiningInterval;
+    public double averageBlockMiningInterval;
 
     private final int CONFIRMATION_DEPTH = 0;
 
