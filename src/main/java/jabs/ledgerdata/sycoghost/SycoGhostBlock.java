@@ -2,6 +2,7 @@ package jabs.ledgerdata.sycoghost;
 
 import jabs.ledgerdata.Block;
 import jabs.ledgerdata.ProofOfWorkBlock;
+import jabs.ledgerdata.ethereum.EthereumBlock;
 import jabs.network.node.nodes.sycoghost.SGBlockHeader;
 import jabs.network.node.nodes.sycoghost.SycoGhostMinerNode;
 import jabs.network.node.nodes.sycomore.BlockHeader;
@@ -35,8 +36,10 @@ public class SycoGhostBlock extends Block<SycoGhostBlock> implements ProofOfWork
     private int totalHeight;
     private int load ;
     //the load of a block, we use as load of the block its size
-    private final int SPLIT_THRESHOLD = 100;
+    private final double SPLIT_THRESHOLD = 1029441752;
     private final int MERGE_THRESHOLD = 10;
+    private double difficulty;
+    private int weight;
     private String hash;
     public SycoGhostBlock(SGBlockHeader header, String block_label, int heightInChain, int totalHeight, int size, double creationTime, SycoGhostMinerNode creator, List<SycoGhostBlock> parents,
                           Set<SycoGhostBlock> uncles, double difficulty, double weight) {
@@ -47,12 +50,14 @@ public class SycoGhostBlock extends Block<SycoGhostBlock> implements ProofOfWork
         //this.chainLabel = chainLabel;
         this.heightInChain = heightInChain;
         this.totalHeight = totalHeight;
+        this.difficulty = difficulty;
+        this.weight = (int) weight;
     }
 
 
     public double getDifficulty() {
-        //return this.difficulty;
-        return 0;
+        return this.difficulty;
+
     }
 
     public static SycoGhostBlock generateGenesisBlock(double difficulty) {
@@ -78,6 +83,7 @@ public class SycoGhostBlock extends Block<SycoGhostBlock> implements ProofOfWork
             //We don't need to ensure that we reached the end of the chain
             //because the chain if of course longer than cmin
             i++;}
+        //System.err.println("cmp_spl_mrg value: "+ String.valueOf(tmp_sum/C_MIN));
         return (double) tmp_sum / C_MIN;}
         else
             return 0;
@@ -116,6 +122,10 @@ public class SycoGhostBlock extends Block<SycoGhostBlock> implements ProofOfWork
         return label.getLabelValue();
     }
 
+    public Set<SycoGhostBlock> getUncles() {
+        return this.uncles;
+    }
+
 
     public int getTotalHeight() {return this.totalHeight; }
 
@@ -127,8 +137,8 @@ public class SycoGhostBlock extends Block<SycoGhostBlock> implements ProofOfWork
      */
     @Override
     public double getWeight() {
-        //return this.weight;
-        return 0;
+        return this.weight;
+
     }
 
     /*public SycomoreBlock getParent () {

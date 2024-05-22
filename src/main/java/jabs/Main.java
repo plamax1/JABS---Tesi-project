@@ -7,7 +7,6 @@ import jabs.scenario.*;
 import java.io.IOException;
 import java.nio.file.Path;
 import java.nio.file.Paths;
-
 /**
  *
  */
@@ -60,9 +59,11 @@ public class Main {
 */
         // Simulate Snow LAN network of 40 nodes for 1 hour
         scenario = new SycomoreScenario("One hour in the life of Sycomore", 1,
-              900, 13.3);
+              30000, 600);
+        //scenario = new SycoGhostScenario(("One hour in the life of SycoGhost"), 1,
+          //      1800, 20);
         //scenario = new NormalEthereumNetworkScenario("One hour in the life of Ethereum", 1,
-          //      3600, 20);
+          //      3600, 6);
         //scenario.AddNewLogger(new SnowCSVLogger(Paths.get("output/snow-simulation-log.csv")));
         scenario.AddNewLogger(new BlockPropagationDelayLogger(
                 Paths.get("output/ethereum-90-propagation-delay-log.csv"), 0.9));
@@ -74,6 +75,5 @@ public class Main {
         //scenario.AddNewLogger(new LiveForkLogger(Paths.get("output/Live_Fork_Log.txt")));
         scenario.run();
         // IOTA
-
     }
 }

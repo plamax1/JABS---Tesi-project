@@ -60,12 +60,6 @@ public class EthereumMinerNode extends EthereumNode implements MinerNode {
         //}
 
 
-        if(simulator.getSimulationTime()>1800 && !done_flag){
-            updateAverageTimeBetweenBlocks(6);
-            done_flag=true;
-
-        }
-
         Set<EthereumBlock> tipBlocks = this.localBlockTree.getChildlessBlocks();
         tipBlocks.remove(canonicalChainHead);
         tipBlocks.removeAll(alreadyUncledBlocks);

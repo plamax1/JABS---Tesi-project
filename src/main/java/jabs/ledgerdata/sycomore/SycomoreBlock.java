@@ -36,6 +36,7 @@ public class SycomoreBlock extends Block<SycomoreBlock> implements ProofOfWorkBl
     //the load of a block, we use as load of the block its size
     private final int SPLIT_THRESHOLD = 100;
     private final int MERGE_THRESHOLD = 10;
+    private double difficulty;
     private String hash;
     public SycomoreBlock(BlockHeader header, String block_label, int heightInChain, int totalHeight, int size, double creationTime, SycomoreMinerNode creator, List<SycomoreBlock> parents,
                          Set<SycomoreBlock> uncles, double difficulty, double weight) {
@@ -46,12 +47,13 @@ public class SycomoreBlock extends Block<SycomoreBlock> implements ProofOfWorkBl
         //this.chainLabel = chainLabel;
         this.heightInChain = heightInChain;
         this.totalHeight = totalHeight;
+        this.difficulty = difficulty;
     }
 
 
     public double getDifficulty() {
         //return this.difficulty;
-        return 0;
+        return this.difficulty;
     }
 
     public static SycomoreBlock generateGenesisBlock(double difficulty) {

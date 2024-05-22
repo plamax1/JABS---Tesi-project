@@ -23,7 +23,7 @@ public class SycomoreConsensusAlgorithm extends AbstractDAGBasedConsensus<Sycomo
     protected SycomoreBlock originOfGhost;
     public double averageBlockMiningInterval;
 
-    private final int CONFIRMATION_DEPTH = 0;
+    private final int CONFIRMATION_DEPTH = 6;
 
     //LocalBlockDAG<SycomoreBlock> localBlockTree;
     Set<SycomoreBlock> orphanSet;
@@ -137,43 +137,59 @@ public class SycomoreConsensusAlgorithm extends AbstractDAGBasedConsensus<Sycomo
     }
 
 
-    private void k_confirmed_block_events() {
+             private void k_confirmed_block_events() {
+                 //In questa funzione noi abbiamo una vista del DAG, e dobbiamo confermare tutti i
+                 //blocchi che abbiano raggiunto una certa profondità.
+                 //System.err.println("K confirmed block events called");
 
-        /*int maxTotalHeight = Integer.MIN_VALUE;
+                 ///DEF: for all keys in chainHeadSet, we have to confirm all the blocks which have an height of
+                 //at least chainHeadSet.get(key).getTotalHeight()-CONFIRMATION_DEPTH
+                 HashSet<SycomoreBlock> blockToConfirm = new HashSet<>();
+                 chainHeadSet.forEach((key, block)->{
+                     //System.err.println("Block: " + block.getTotalHeight() + " Key: " + key );
+                     blockToConfirm.addAll(getBlocksWithHeight(block, block.getTotalHeight()-CONFIRMATION_DEPTH));
+                     if(!blockToConfirm.isEmpty()){
+                     }
+                 });
+                 //System.err.println("444Block to confirm: " + blockToConfirm.size());
+                 blockToConfirm.forEach((block)-> {
+                     if(!already_K_confirmed_blocks.contains(block)){
+                         //System.err.println("CONFIRMING BLOCK: " + block.getTotalHeight());
+                         Simulator simulator = this.peerDLTNode.getSimulator();
+                         double currentTime = simulator.getSimulationTime();
+                         simulator.putEvent(new K_ConfirmationBlockEvent(currentTime,this.peerDLTNode, block), 0);
+                         already_K_confirmed_blocks.add(block);
+                     }
+                 });
 
-        // Iterate over the values of the map
-        for (SycomoreBlock block : chainHeadSet.values()) {
-            // Get the total height of the current block
-            int totalHeight = block.getTotalHeight();
-
-            // Update maxTotalHeight if necessary
-            if (totalHeight > maxTotalHeight) {
-                maxTotalHeight = totalHeight;
-            }
-        }*/
-        //Problem if the maxtotal height of the chain has not increased, blocks are confirmed again
-        //int confirmedHeight =  maxTotalHeight-CONFIRMATION_DEPTH;
+             }
 
 
-        ///DEF: for all keys in chainHeadSet, we have to confirm all the blocks which have an height of
-        //at least chainHeadSet.get(key).getTotalHeight()-CONFIRMATION_DEPTH
-        HashSet<SycomoreBlock> blockToConfirm = new HashSet<>();
-        chainHeadSet.forEach((key, block)->{
-            blockToConfirm.addAll(getBlocksWithHeight(block, block.getTotalHeight()-CONFIRMATION_DEPTH));
-        });
-        //System.err.println("444Block to confirm: " + blockToConfirm.size());
-        chainHeadSet.forEach((key, block)->{
-           //System.err.println("Chain: " + key + " Height: " + block.getTotalHeight());
-        });
-        blockToConfirm.forEach((block)-> {
-            if(!already_K_confirmed_blocks.contains(block)){
-                Simulator simulator = this.peerDLTNode.getSimulator();
-                double currentTime = simulator.getSimulationTime();
-                simulator.putEvent(new K_ConfirmationBlockEvent(currentTime,this.peerDLTNode, block), 0);
-                already_K_confirmed_blocks.add(block);
-            }
-        });
+             private HashSet<SycomoreBlock> getBlocksWithHeight(SycomoreBlock block, int height) {
+                 //System.out.println("GBWH, getting block with height: " + height + " from block: " + block.getTotalHeight() + " with label: " + block.getLabel());
+                 //Height is height of the block we want to reach
+                 HashSet<SycomoreBlock> blockSet = new HashSet<>();
+                 HashSet<SycomoreBlock> blockSetWithHeight = new HashSet<>();
+                 if (!block.getParents().isEmpty()) {
+                     blockSet.addAll(block.getParents());
+                 }
+                 while (!blockSet.isEmpty()) {
+                     Iterator<SycomoreBlock> iterator = blockSet.iterator(); // Create an iterator
+                     SycomoreBlock extractedElement = iterator.next(); // Get the next element
+                     blockSet.remove(extractedElement); // Remove the element from the set
+                     //System.err.println("Block set size: " + blockSet.size());
+                     //System.err.println("Current element height: " + extractedElement.getTotalHeight()+ " Target Height: " + height);
+                     if (extractedElement.getTotalHeight() == height) {
+                         blockSetWithHeight.add(extractedElement);
+                     } else {
+                         if (!extractedElement.getParents().isEmpty() && extractedElement.getTotalHeight() > height) {
+                             //System.err.println("Adding parents");
+                             blockSet.addAll(extractedElement.getParents());
+                         }
+                     }
+                 }
 
+                 return blockSetWithHeight;
              }
 
              private int findMaxHeight(HashSet<SycomoreBlock> blockSet) {
@@ -185,23 +201,7 @@ public class SycomoreConsensusAlgorithm extends AbstractDAGBasedConsensus<Sycomo
                 return maxHeight;
             }
 
-            private HashSet<SycomoreBlock> getBlocksWithHeight(SycomoreBlock block, int height){
-                HashSet<SycomoreBlock> blockSet = new HashSet<>();
-                SycomoreBlock currentBlock = block;
-                while(currentBlock!= null && currentBlock.getTotalHeight() > height){
-                    if(!currentBlock.getParents().isEmpty()) {
-                        currentBlock = currentBlock.getParents().get(0);
-                    }
-                    else
-                        break;
-                    //Possible problem, se la chain si divide in 2 che facciamo se ci prendiamo solo get(0)
-                    // dei parents: non dovrebbe essere un pronlrms in quanto i blocchi dell'altra chain
-                    //dovrebbero trovarsi a partire dalle altre mainchainhead.
-                    if(currentBlock.getTotalHeight() == height)
-                        blockSet.add(currentBlock);
-                }
-                return blockSet;
-            }
+
             public void setAvgBlockMiningInterval(double avgBlockMiningInterval){
 
                 this.averageBlockMiningInterval=avgBlockMiningInterval;

@@ -18,6 +18,7 @@ import java.util.HashSet;
 public class SycomoreGlobalProofOfWorkNetwork<R extends Enum<R>> extends //Sycomore POW network
         GlobalProofOfWorkNetwork<SycomoreNode, SycomoreMinerNode, SycomoreBlock, R> {//uses ethereum things // to edit
     // We use syc block syc node and syc syc miner node
+
     public SycomoreGlobalProofOfWorkNetwork(RandomnessEngine randomnessEngine,
                                       ProofOfWorkGlobalNetworkStats<R> networkStats) {
         super(randomnessEngine, networkStats);
@@ -30,14 +31,7 @@ public class SycomoreGlobalProofOfWorkNetwork<R extends Enum<R>> extends //Sycom
      * @param difficulty Difficulty of genesis block
      * @return Parent-less block that could be used for genesis block
      */
-    @Override
 
-   /* public EthereumBlock genesisBlock(double difficulty) {
-        return new EthereumBlock(0, 0, 0, null, null, new HashSet<>(), difficulty,
-                0);
-    }*/
-
-    //
        public SycomoreBlock genesisBlock(double difficulty) {
             return new SycomoreBlock(new BlockHeader(), "", 0, 0, 0, 0, null, null, new HashSet<>(), difficulty,
               0);
@@ -54,6 +48,7 @@ public class SycomoreGlobalProofOfWorkNetwork<R extends Enum<R>> extends //Sycom
     public SycomoreMinerNode createSampleMiner(Simulator simulator, int nodeID, double hashPower,
                                                SycomoreBlock genesisBlock,
                                                GenericConsensusAlgorithmConfig chainBasedConsensusConfig) {
+           //System.err.println("Creating a new miner node" + " with hash power " + hashPower + " and nodeID " + nodeID);
         R region = this.sampleMinerRegion();
         return new SycomoreMinerNode(simulator, this, nodeID, this.sampleDownloadBandwidth(region),
                 this.sampleUploadBandwidth(region), hashPower,

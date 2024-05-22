@@ -5,6 +5,7 @@ import jabs.consensus.algorithm.SycoGhostProtocol;
 import jabs.consensus.algorithm.SycomoreConsensusAlgorithm;
 import jabs.consensus.config.SycoGhostProtocolConfig;
 import jabs.consensus.config.SycomoreProtocolConfig;
+import jabs.ledgerdata.ethereum.EthereumBlock;
 import jabs.ledgerdata.sycoghost.SycoGhostBlock;
 import jabs.ledgerdata.sycoghost.SycoGhostBlockWithTx;
 import jabs.ledgerdata.sycoghost.SycoGhostTx;
@@ -37,7 +38,11 @@ public class SycoGhostMinerNode extends SycoGhostNode implements MinerNode {
     Random rand = new Random();
     private TxGenerationProcessSingleNode txGenerationProcessSingleNode;
     private BlockMiningProcess blockMiningProcess;
-    private final int H_MAX = 2016;
+    private final int H_MAX = 18;
+    int currentNumUncles;
+    private int last_diff_adjustment_height;
+    private int generate_block_counter = 0;
+
 
 
     Set<SycoGhostTx> blockTxs = new HashSet<>();
@@ -50,6 +55,8 @@ public class SycoGhostMinerNode extends SycoGhostNode implements MinerNode {
         super(simulator, network, nodeID, downloadBandwidth, uploadBandwidth, genesisBlock, sycomoreProtocolConfig);
         this.hashPower = hashPower;
         blockTxs = new HashSet<>();
+        currentNumUncles=0;
+        last_diff_adjustment_height=0;
         //System.err.println("Hi, this is sycomore node: " + this.toString());
 //      txGenerationProcessSingleNode = new TxGenerationProcessSingleNode(this.getSimulator(), randomnessEngine, this,1);
 
@@ -62,11 +69,17 @@ public class SycoGhostMinerNode extends SycoGhostNode implements MinerNode {
         super(simulator, network, nodeID, downloadBandwidth, uploadBandwidth, consensusAlgorithm);
         this.hashPower = hashPower;
         blockTxs = new HashSet<>();
+        currentNumUncles=0;
+        last_diff_adjustment_height=0;
     }
 
 
     public void generateNewBlock() {
+        //System.err.println("Generate new block called, time to next generation: " + blockMiningProcess.timeToNextGeneration() + " on node: " + this.nodeID + "hashpower: " + this.hashPower);
 
+        generate_block_counter ++;
+        //System.err.println("Generate block counter: " + generate_block_counter + " on node: " + this.nodeID);
+        //System.err.println("-------GENERATE BLOCK CALLED Block time: " + this.blockMiningProcess.averageTimeBetweenGenerations + " called for time: " + generate_block_counter + "on node: " + this.nodeID);
         //System.err.println("Generate new Block called!");
 
         //IMPORTANT, since we cannot create an HASHMAP in the consensus algo with an empty string
@@ -78,6 +91,10 @@ public class SycoGhostMinerNode extends SycoGhostNode implements MinerNode {
 
         generateTransactionSet();
 
+        Set<SycoGhostBlock> tipBlocks = this.localBlockTree.getChildlessBlocks();
+        tipBlocks.removeAll(((SycoGhostProtocol) this.consensusAlgorithm).getChainHeads());
+        tipBlocks.removeAll(alreadyUncledBlocks);
+
         //System.err.println("In the mempool there are: "+ memPool.size() + " transactions" );
 
         SGBlockHeader header = new SGBlockHeader();
@@ -88,13 +105,13 @@ public class SycoGhostMinerNode extends SycoGhostNode implements MinerNode {
 
         Set<SycoGhostBlock> leafBlocks = this.localBlockTree.getChildlessBlocks();
 
-        List<SycoGhostBlock> usableLeaves = usableLeaves(leafBlocks);
+        Set<SycoGhostBlock> usableLeaves = usableLeaves(leafBlocks);
         //Since this is a simulation, we extract at random the predecessor
         //System.err.println("Usable leaves: "+ String.valueOf(usableLeaves.size()));
-        SycoGhostBlock parentBlock = usableLeaves.get(rand.nextInt(usableLeaves.size()));
+        SycoGhostBlock parentBlock = new ArrayList<SycoGhostBlock>(usableLeaves).get(rand.nextInt(usableLeaves.size()));
         LinkedList<SycoGhostBlock> newBlockParents = new LinkedList<SycoGhostBlock>();
         if(parentBlock.isSplittable()){
-            //System.err.println("BLOCK SPLITTABLE ");
+            System.err.println("******************************BLOCK SPLITTABLE ");
             //The block is splittable, so we can produce 2 child blocks:
             newBlockParents.add(parentBlock);
 
@@ -112,7 +129,7 @@ public class SycoGhostMinerNode extends SycoGhostNode implements MinerNode {
                 blockTxs.add(sycomoreTx);
                 totalGas += sycomoreTx.getGas();
             }
-            SycoGhostBlockWithTx newSycoBlockWithTX = new SycoGhostBlockWithTx(new SGBlockHeader(),newBlockLabel,newBlockHeightInChain,newBlockTotalHeight,simulator.getSimulationTime(),this, newBlockParents,null, blockTxs,0,0);
+            SycoGhostBlockWithTx newSycoBlockWithTX = new SycoGhostBlockWithTx(new SGBlockHeader(),newBlockLabel,newBlockHeightInChain,newBlockTotalHeight,simulator.getSimulationTime(),this, newBlockParents,tipBlocks, blockTxs,0,0);
             spreadBlock(newSycoBlockWithTX);
             //BLOCK 2
             //Header??
@@ -131,15 +148,15 @@ public class SycoGhostMinerNode extends SycoGhostNode implements MinerNode {
             }
             //System.err.println("In the block there are: "+ blockTxs.size() + " transactions" );
 
-            newSycoBlockWithTX = new SycoGhostBlockWithTx(new SGBlockHeader(),newBlockLabel,newBlockHeightInChain,newBlockTotalHeight,simulator.getSimulationTime(),this, newBlockParents,null, blockTxs,0,0);
+            newSycoBlockWithTX = new SycoGhostBlockWithTx(new SGBlockHeader(),newBlockLabel,newBlockHeightInChain,newBlockTotalHeight,simulator.getSimulationTime(),this, newBlockParents,tipBlocks, blockTxs,0,0);
             spreadBlock(newSycoBlockWithTX);
-            updateAverageTimeBetweenBlocks(600/countUniqueLabels(usableLeaves));
+            //updateAverageTimeBetweenBlocks(600/countUniqueLabels(usableLeaves));
 
 
         }
 
-        if(parentBlock.isMergeable()){
-            //System.err.println("if mergeable ");
+        if(parentBlock.isMergeable() && this.countUniqueLabels(leafBlocks)>1){
+            System.err.println("*******************if mergeable ");
 
             //Se il blocco è mergeable:
             //1: Controlliamo se anche il fratello è mergeable, se no lo trattiamo come un blocco normale
@@ -163,15 +180,14 @@ public class SycoGhostMinerNode extends SycoGhostNode implements MinerNode {
                     blockTxs.add(sycomoreTx);
                     totalGas += sycomoreTx.getGas();
                 }
-                SycoGhostBlockWithTx newSycoBlockWithTX = new SycoGhostBlockWithTx(new SGBlockHeader(),newBlockLabel,newBlockHeightInChain,newBlockTotalHeight,simulator.getSimulationTime(),this, newBlockParents,null, blockTxs,0,0);
+                SycoGhostBlockWithTx newSycoBlockWithTX = new SycoGhostBlockWithTx(new SGBlockHeader(),newBlockLabel,newBlockHeightInChain,newBlockTotalHeight,simulator.getSimulationTime(),this, newBlockParents,tipBlocks, blockTxs,0,0);
                 spreadBlock(newSycoBlockWithTX);
 
             }}
 
             //The block is not splittable nor mergeable
             else{
-                //System.err.println("The block is not splittable nor mergeable: ");
-
+                System.err.println("The block is not splittable nor mergeable: ");
                 newBlockParents.add(parentBlock);
                 newBlockLabel = parentBlock.getLabel();
                 newBlockHeightInChain= parentBlock.getHeightInChain()+1; //because we are starting a new Chain
@@ -188,15 +204,10 @@ public class SycoGhostMinerNode extends SycoGhostNode implements MinerNode {
                 }
 
             //System.err.println("456In the block there are: "+ blockTxs.size() + " transactions" );
-            SycoGhostBlock newSycoGhostBlockWithTX = new SycoGhostBlockWithTx(new SGBlockHeader(),newBlockLabel,newBlockHeightInChain,newBlockTotalHeight,simulator.getSimulationTime(),this, newBlockParents,null, blockTxs,0,0);
+            SycoGhostBlock newSycoGhostBlockWithTX = new SycoGhostBlockWithTx(new SGBlockHeader(),newBlockLabel,newBlockHeightInChain,newBlockTotalHeight,simulator.getSimulationTime(),this, newBlockParents,tipBlocks, blockTxs,0,0);
                 spreadBlock(newSycoGhostBlockWithTX);
             }
-
-
-
-
-
-    }
+}
 
     private void generateTransactionSet() {
         //int scaleFactor = 1;
@@ -209,7 +220,7 @@ public class SycoGhostMinerNode extends SycoGhostNode implements MinerNode {
         //int[] load_array=SycomoreNodeUtils.populateArray();
         //HashMap<Integer,Integer> map = SycomoreNodeUtils.arrayToMap(load_array);
         //while(this.getSimulator().getSimulationTime()<map.ge)
-        for (int i = 1; i <= 1000; i++) {
+        for (int i = 1; i <= 10; i++) {
             memPool.add((SycoGhostTx) new SycoGhostTx(3000, 22000));
         }
     }
@@ -219,13 +230,13 @@ public class SycoGhostMinerNode extends SycoGhostNode implements MinerNode {
      */
     @Override
     public void startMining() {
-        System.err.println("Startmining called");
+        //System.err.println("Startmining called");
         //here you have to implement the average time between blocks
         SycoGhostProtocol consensusAlgorithm = (SycoGhostProtocol) this.getConsensusAlgorithm();
         this.blockMiningProcess = new BlockMiningProcess(this.simulator, this.network.getRandom(),
-                consensusAlgorithm.averageBlockMiningInterval, this);
+                2097/(double) this.hashPower, this);
         this.miningProcess = this.simulator.putEvent(blockMiningProcess, blockMiningProcess.timeToNextGeneration());
-
+        System.err.println("Startmining called on node: " + this.nodeID + "hashpower: " + this.hashPower + "average time between blocks: "+blockMiningProcess.averageTimeBetweenGenerations);
 
     }
 
@@ -240,7 +251,7 @@ public class SycoGhostMinerNode extends SycoGhostNode implements MinerNode {
     public double getHashPower() {
         return this.hashPower;
     }
-    private  List<SycoGhostBlock> usableLeaves ( Set<SycoGhostBlock> leafBlocks) {
+    private  Set<SycoGhostBlock> usableLeaves ( Set<SycoGhostBlock> leafBlocks) {
         //HERE USABLE LEAVES HAS TO DO 2 THINGS.
         //1: FIND THE MAIN CHAIN FOR EACH LABEL
         //2: SELECT ONLY THE CHAINS WE CAN APPEND THE BLOCK TO BECAUSE OF THE LENGTH OF THE CHAIN
@@ -265,24 +276,31 @@ public class SycoGhostMinerNode extends SycoGhostNode implements MinerNode {
         }
 
         // Now maxWeightBlocksByLabel contains the block with maximum weight for each label,
+        HashSet<SycoGhostBlock> uniqueMaxWeightBlocks = new HashSet<>(maxWeightBlocksByLabel.values());
+        //System.err.println("Unique max weight blocks: "+ uniqueMaxWeightBlocks.size());
 
         //2: SELECT ONLY THE CHAINS WE CAN APPEND THE BLOCK TO BECAUSE OF THE LENGTH OF THE CHAIN
 
-        LinkedList<SycoGhostBlock> usableLeaves = new LinkedList<SycoGhostBlock>();
-
-        // You can iterate over the map to access the results
-        int minChainHeight = Integer.MAX_VALUE;
-
-        for (Map.Entry<String, SycoGhostBlock> entry : maxWeightBlocksByLabel.entrySet()) {
-            if(entry.getValue().getTotalHeight()<minChainHeight)
-                minChainHeight = entry.getValue().getTotalHeight();
+        HashSet<SycoGhostBlock> usableLeaves = new HashSet<>();
+        for (SycoGhostBlock leaf : uniqueMaxWeightBlocks){
+            //System.err.println("Total height: "+ leaf.getTotalHeight() + "Last diff adjustment height: "+ last_diff_adjustment_height + "H_MAX: "+ H_MAX + "Difference: "+ (leaf.getTotalHeight()-last_diff_adjustment_height));
+            if((leaf.getTotalHeight()-last_diff_adjustment_height)<H_MAX){
+                usableLeaves.add(leaf);
+            //System.err.println("Usable leaves size in if: "+ usableLeaves.size());
+            //System.err.println("If triggered!");
+                }
+        }
+        //If there are no usable leaves, all the leaves have reached the re_adjustment height, so we
+        //can trigger the difficulty adjustment
+        //System.err.println("Usable leaves: "+ usableLeaves.size());
+        if(usableLeaves.isEmpty()){
+            int uniqueLabels = countUniqueLabels(leafBlocks);
+            updateAverageTimeBetweenBlocks((double) ((SycoGhostProtocol) this.getConsensusAlgorithm()).averageBlockMiningInterval /uniqueLabels);
+            System.err.println("Updating average time between blocks, new time: " + ((SycoGhostProtocol) this.getConsensusAlgorithm()).averageBlockMiningInterval/uniqueLabels + "number of chains: "+ uniqueLabels + "currect chain height: "+ leafBlocks.iterator().next().getTotalHeight());
+            last_diff_adjustment_height= leafBlocks.iterator().next().getTotalHeight();
+            usableLeaves.addAll(uniqueMaxWeightBlocks);
         }
 
-        for (Map.Entry<String, SycoGhostBlock> entry : maxWeightBlocksByLabel.entrySet()) {
-            if(entry.getValue().getTotalHeight()<minChainHeight+10)
-                usableLeaves.add(entry.getValue());
-
-        }
         return usableLeaves;
     }
 
@@ -320,6 +338,8 @@ public class SycoGhostMinerNode extends SycoGhostNode implements MinerNode {
         //this is the function to process a new block
         //the consensusalgorithm processes the new block
         this.consensusAlgorithm.newIncomingBlock(sycomoreBlock);
+        alreadyUncledBlocks.addAll(sycomoreBlock.getUncles());
+
 
 
         //alreadyUncledBlocks.addAll(sycomoreBlock.getUncles());
@@ -354,7 +374,7 @@ public class SycoGhostMinerNode extends SycoGhostNode implements MinerNode {
         this.hashPower= hashPowerScale * hashPowers.get(this.nodeID);
         //this.blockMiningProcess.averageTimeBetweenGenerations= this.consensusAlgorithm.getCanonicalChainHead().getDifficulty()/((double) this.hashPower);
         this.blockMiningProcess.averageTimeBetweenGenerations = 2097 / (hashPowerScale* hashPowers.get(this.nodeID));
-        System.err.println( "Node id: " + this.nodeID+ "UPDATED avg time between blocks: "+blockMiningProcess.averageTimeBetweenGenerations);
+        //System.err.println( "Node id: " + this.nodeID+ "UPDATED avg time between blocks: "+blockMiningProcess.averageTimeBetweenGenerations);
 
     }
 

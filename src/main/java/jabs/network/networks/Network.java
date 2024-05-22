@@ -39,7 +39,7 @@ public abstract class Network<N extends Node, NodeType extends Enum<NodeType>> {
     }
 
     public double getLatency(N from, N to) {
-        return networkStats.getLatency(nodeTypes.get(from), nodeTypes.get(to));
+        return (networkStats.getLatency(nodeTypes.get(from), nodeTypes.get(to))*6);
     };
     //latency between 2 nodes
     //we get sampledownloadbandwidth from NodeType, this simply return the bandwidth

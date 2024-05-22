@@ -95,6 +95,7 @@ public class SycomoreMinerNode extends SycomoreNode implements MinerNode {
         String newBlockLabel;
 
         Set<SycomoreBlock> leafBlocks = this.localBlockTree.getChildlessBlocks();
+        //System.err.println("Leaf Blocks: "+ String.valueOf(leafBlocks.size()));
         int currNumChains = countUniqueLabels(leafBlocks);
 
         //System.err.println("leaf Blocks: " + leafBlocks.toString());
@@ -105,7 +106,7 @@ public class SycomoreMinerNode extends SycomoreNode implements MinerNode {
         SycomoreBlock parentBlock = usableLeaves.get(rand.nextInt(usableLeaves.size()));
         LinkedList<SycomoreBlock> newBlockParents = new LinkedList<SycomoreBlock>();
         if(parentBlock.isSplittable()){
-            //System.err.println("BLOCK SPLITTABLE ");
+            System.err.println("BLOCK SPLITTABLE ");
             //The block is splittable, so we can produce 2 child blocks:
             newBlockParents.add(parentBlock);
 
@@ -149,7 +150,7 @@ public class SycomoreMinerNode extends SycomoreNode implements MinerNode {
         }
 
         if(parentBlock.isMergeable()){
-            //System.err.println("if mergeable ");
+            System.err.println("if mergeable ");
 
             //Se il blocco è mergeable:
             //1: Controlliamo se anche il fratello è mergeable, se no lo trattiamo come un blocco normale
@@ -181,7 +182,7 @@ public class SycomoreMinerNode extends SycomoreNode implements MinerNode {
 
             //The block is not splittable nor mergeable
             else{
-                //System.err.println("The block is not splittable nor mergeable: ");
+                System.err.println("The block is not splittable nor mergeable: ");
 
                 newBlockParents.add(parentBlock);
                 newBlockLabel = parentBlock.getLabel();
@@ -234,10 +235,10 @@ public class SycomoreMinerNode extends SycomoreNode implements MinerNode {
         System.err.println("Startmining called");
         //here you have to implement the average time between blocks
         SycomoreConsensusAlgorithm consensusAlgorithm = (SycomoreConsensusAlgorithm) this.getConsensusAlgorithm();
-        BlockMiningProcess blockMiningProcess = new BlockMiningProcess(this.simulator, this.network.getRandom(),
-                consensusAlgorithm.averageBlockMiningInterval, this);
+        this.blockMiningProcess = new BlockMiningProcess(this.simulator, this.network.getRandom(),2097/(double) this.hashPower, this);
         System.err.println("Sycomore avg block mining interval " + consensusAlgorithm.averageBlockMiningInterval);
         this.miningProcess = this.simulator.putEvent(blockMiningProcess, blockMiningProcess.timeToNextGeneration());
+        System.err.println("node id: "+ this.nodeID + "hashpower: "+ this.hashPower + "avg time between blocks: "+blockMiningProcess.averageTimeBetweenGenerations);
 
 
     }
@@ -258,13 +259,16 @@ public class SycomoreMinerNode extends SycomoreNode implements MinerNode {
         //last difficulty adjustment height
         LinkedList<SycomoreBlock> usableLeaves = new LinkedList<SycomoreBlock>();
         for (SycomoreBlock leaf : leafBlocks){
-            if(leaf.getTotalHeight()-last_diff_adjustment_height<=-H_MAX)
-                usableLeaves.add(leaf);
+            //System.err.println("Leaf total height: "+ leaf.getTotalHeight());
+            if((leaf.getTotalHeight()-last_diff_adjustment_height)<=H_MAX){
+                //System.err.println("IN IF: ");
+                usableLeaves.add(leaf);}
         }
         //If there are no usable leaves, all the leaves have reached the re_adjustment height, so we
         //can trigger the difficulty adjustment
         if(usableLeaves.isEmpty()){
             updateAverageTimeBetweenBlocks((double) 600 /countUniqueLabels(leafBlocks));
+            last_diff_adjustment_height=leafBlocks.iterator().next().getTotalHeight();
         }
 
         return usableLeaves;

@@ -103,6 +103,7 @@ public abstract class GlobalProofOfWorkNetwork<N extends Node, M extends MinerNo
         //For each miner we create a sample miner, for each node a sample node, and then
         //connect everything to the network.
         for (int i = 0; i < numMiners; i++) {
+            //System.err.println("Appling hashpower scale: " + hashPowerScale + " to miner " + i + " with hashpower " + hashPowers.get(i));
             this.addMiner(createSampleMiner(simulator, i, hashPowerScale * hashPowers.get(i), genesisBlock,
                     chainBasedConsensusConfig));
         }

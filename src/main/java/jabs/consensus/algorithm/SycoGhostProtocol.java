@@ -16,6 +16,7 @@ import jabs.simulator.event.K_ConfirmationBlockEvent;
 
 import java.util.HashMap;
 import java.util.HashSet;
+import java.util.Iterator;
 import java.util.Map;
 
 public class SycoGhostProtocol extends AbstractDAGBasedConsensus<SycoGhostBlock, SycoGhostTx>{
@@ -24,21 +25,30 @@ public class SycoGhostProtocol extends AbstractDAGBasedConsensus<SycoGhostBlock,
     public static int DEFAULT_GHOST_WEIGHT = 1;
     private Map<String, SycoGhostBlock> chainHeadSet;
 
-    private int CONFIRMATION_DEPHT = 6;
+    private int CONFIRMATION_DEPTH = 6;
     protected SycoGhostBlock originOfGhost;
     public double averageBlockMiningInterval;
+    private HashSet<SycoGhostBlock> already_K_confirmed_blocks;
+    private int numberofseenblocks = 0;
 
     public SycoGhostProtocol(LocalBlockDAG<SycoGhostBlock> localBlockDAG, SycoGhostProtocolConfig sycoGhostProtocolConfig) {
         super(localBlockDAG);
+        chainHeadSet = new HashMap<String,SycoGhostBlock>();
+        chainHeadSet.put("ε", localBlockDAG.getGenesisBlock());
         this.originOfGhost = localBlockDAG.getGenesisBlock();
         this.newIncomingBlock(localBlockDAG.getGenesisBlock());
-        chainHeadSet.put("ε", localBlockDAG.getGenesisBlock());
         this.averageBlockMiningInterval = sycoGhostProtocolConfig.averageBlockMiningInterval();
+        this.already_K_confirmed_blocks = new HashSet<SycoGhostBlock>();
+
     }
 
     @Override
-    public void newIncomingBlock(SycoGhostBlock block) { //here is what happens when we receive a new ethereum block
-        //System.err.println(this.peerBlockchainNode);
+    public void newIncomingBlock(SycoGhostBlock block) { //here is what happens when we receive a new block
+        //this should be triggered when we see block that is not in the localBlockDAG
+        numberofseenblocks++;
+        if(this.peerDLTNode!=null) {
+            //System.err.println("Node id: " + this.peerDLTNode.nodeID + "Number of seen blocks: " + numberofseenblocks);
+        }
         totalWeights.put(block, DEFAULT_GHOST_WEIGHT);
         if (this.localBlockDAG.getLocalBlock(block).isConnectedToGenesis) {
             for (SycoGhostBlock ancestor:this.localBlockDAG.getAllAncestors(block)) {
@@ -51,8 +61,8 @@ public class SycoGhostProtocol extends AbstractDAGBasedConsensus<SycoGhostBlock,
         SycoGhostBlock ghostCurrentLabelMainChainHead = this.ghost();
         if (this.chainHeadSet.get(block.getLabel()) != ghostCurrentLabelMainChainHead) {
             this.chainHeadSet.put(block.getLabel(), ghostCurrentLabelMainChainHead);
-            updateChain();
         }
+        updateChain();
     }
     public SycoGhostBlock ghost() {
         SycoGhostBlock block = this.originOfGhost;
@@ -81,15 +91,10 @@ public class SycoGhostProtocol extends AbstractDAGBasedConsensus<SycoGhostBlock,
         //this.confirmedBlocks = this.localBlockDAG.getAllAncestors(this.currentMainChainHead);
         for (SycoGhostBlock block: this.chainHeadSet.values()) {
             this.confirmedBlocks.addAll(this.localBlockDAG.getAllAncestors(block));
-        }/*
-        if(this.peerDLTNode!=null){
-            //System.err.println("Siiiiiiiiiiii");
-            Simulator simulator = this.peerDLTNode.getSimulator();
-            double currentTime = simulator.getSimulationTime();
-            simulator.putEvent(new BlockConfirmationEvent(currentTime, this.peerDLTNode, this.currentMainChainHead),0);
-        //In this case a block is confirmed, but in case of fork we are not sure this
-            //block cannot be reversed
-        }*/
+        }
+
+        //HERE WE trigger the confirmation event for the blocks that have reached the confirmation depth
+        k_confirmed_block_events();
 
         //Each time a new Block arrives, there is the possibility that the main
         //chain has grown, so an existing Block may have reached the requested confirmation depth
@@ -112,9 +117,70 @@ public class SycoGhostProtocol extends AbstractDAGBasedConsensus<SycoGhostBlock,
         return totalWeights.get(block);
     }
 
+    // Method to get all SycoGhostBlock from chainHeadSet
+    public HashSet<SycoGhostBlock> getChainHeads() {
+        return new HashSet<>(chainHeadSet.values());
+    }
 
-        //quindi in pratica il consensus protocol conferma il blocco???
+    private void k_confirmed_block_events() {
+        //In questa funzione noi abbiamo una vista del DAG, e dobbiamo confermare tutti i
+        //blocchi che abbiano raggiunto una certa profondità.
+        //System.err.println("K confirmed block events called");
 
+        ///DEF: for all keys in chainHeadSet, we have to confirm all the blocks which have an height of
+        //at least chainHeadSet.get(key).getTotalHeight()-CONFIRMATION_DEPTH
+        HashSet<SycoGhostBlock> blockToConfirm = new HashSet<>();
+        chainHeadSet.forEach((key, block)->{
+            //System.err.println("Block: " + block.getTotalHeight() + " Key: " + key );
+            blockToConfirm.addAll(getBlocksWithHeight(block, block.getTotalHeight()-CONFIRMATION_DEPTH));
+            if(!blockToConfirm.isEmpty()){
+                //System.err.println("Block to confirm: " + blockToConfirm.iterator().next().getTotalHeight());
+            }
+             });
+        //System.err.println("444Block to confirm: " + blockToConfirm.size());
+        blockToConfirm.forEach((block)-> {
+            if(!already_K_confirmed_blocks.contains(block)){
+                //System.err.println("CONFIRMING BLOCK: " + block.getTotalHeight());
+                Simulator simulator = this.peerDLTNode.getSimulator();
+                double currentTime = simulator.getSimulationTime();
+                simulator.putEvent(new K_ConfirmationBlockEvent(currentTime,this.peerDLTNode, block), 0);
+                already_K_confirmed_blocks.add(block);
+            }
+        });
+
+    }
+
+
+    private HashSet<SycoGhostBlock> getBlocksWithHeight(SycoGhostBlock block, int height) {
+        //System.out.println("GBWH, getting block with height: " + height + " from block: " + block.getTotalHeight() + " with label: " + block.getLabel());
+        //Height is height of the block we want to reach
+        HashSet<SycoGhostBlock> blockSet = new HashSet<>();
+        HashSet<SycoGhostBlock> blockSetWithHeight = new HashSet<>();
+        if (!block.getParents().isEmpty()) {
+            blockSet.addAll(block.getParents());
+        }
+        while (!blockSet.isEmpty()) {
+            Iterator<SycoGhostBlock> iterator = blockSet.iterator(); // Create an iterator
+            SycoGhostBlock extractedElement = iterator.next(); // Get the next element
+            blockSet.remove(extractedElement); // Remove the element from the set
+            //System.err.println("Block set size: " + blockSet.size());
+
+            //System.err.println("Current element height: " + extractedElement.getTotalHeight()+ " Target Height: " + height);
+            if (extractedElement.getTotalHeight() == height) {
+                blockSetWithHeight.add(extractedElement);
+            } else {
+                if (!extractedElement.getParents().isEmpty() && extractedElement.getTotalHeight() > height) {
+                    //System.err.println("Adding parents");
+                    blockSet.addAll(extractedElement.getParents());
+                }
+            }
+
+
+
+        }
+
+        return blockSetWithHeight;
+    }
 
 }
 
