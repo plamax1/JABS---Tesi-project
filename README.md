@@ -88,6 +88,8 @@ Currently, the following consensus algorithms are implemented in JABS:
  5. IOTA Tangle
  6. Nakamoto Heaviest-Chain
  7. Robust Round Robin
+ 8. Sycomore Protocol
+ 9. SycoGhost Protocol
 
 ## Roadmap ##
 
